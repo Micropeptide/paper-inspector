@@ -1,0 +1,31 @@
+{
+ "retracted": [
+  "10.1371/journal.pone.0112135",
+  "10.1371/journal.pone.0104743",
+  "10.1371/journal.pone.0240663",
+  "10.1371/journal.pone.0079472",
+  "10.1371/journal.pone.0100232",
+  "10.1371/journal.pone.0128753",
+  "10.1371/journal.pone.0192790",
+  "10.1371/journal.pone.0062705",
+  "10.1371/journal.pone.0089622",
+  "10.1371/journal.pone.0065456",
+  "10.1371/journal.pone.0083271",
+  "10.1371/journal.pone.0055487"
+ ],
+ "control": [
+  "10.1371/journal.pone.0127392",
+  "10.1371/journal.pone.0229213",
+  "10.1371/journal.pone.0075885",
+  "10.1371/journal.pone.0216373",
+  "10.1371/journal.pone.0087374",
+  "10.1371/journal.pone.0072291",
+  "10.1371/journal.pone.0188705",
+  "10.1371/journal.pone.0132848",
+  "10.1371/journal.pone.0074490",
+  "10.1371/journal.pone.0073082",
+  "10.1371/journal.pone.0041897",
+  "10.1371/journal.pone.0134941"
+ ],
+ "note": "Sampled from OpenAlex: PLOS ONE research articles 2012-2020, retracted vs not (seed 7)."
+}

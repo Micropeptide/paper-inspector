@@ -1,0 +1,1618 @@
+{
+ "key": "ideas-integrity",
+ "res": {
+  "ideas": [
+   {
+    "category": "bugfix",
+    "title": "GRIM uses banker's rounding and flags valid means",
+    "description": "stats.py:129 checks round(k/n, d) with Python round(), which rounds half to even on binary floats. 'mean score 2.13 (n = 8)' comes from 17/8 = 2.125, which Python rounds to 2.12, so a valid mean gets flagged as impossible. Fix: use Decimal with ROUND_HALF_UP and also accept half-down, half-even and truncation, as the percent check at stats.py:148 already does. Add regression tests for x.xx5 boundaries.",
+    "value": 5,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/stats.py",
+     "tests/test_engine.py"
+    ]
+   },
+   {
+    "category": "bugfix",
+    "title": "Make the INTEGRITY set match the checks that exist",
+    "description": "The INTEGRITY set (models.py:131-137) lists refs.nonexistent, stats.pcurve, data.copied_across_files and data.duplicate_column, but no detector emits these ids. Meanwhile refcheck.py emits refs.bad_doi (invented DOIs, an AI-fabrication signal), which is scored as a quality note. Rename the ids so they agree (refs.bad_doi or refs.nonexistent) and add a test that every INTEGRITY id is emitted somewhere and every emitted id has a docs entry.",
+    "value": 4,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/models.py",
+     "engine/paperinspector/refcheck.py",
+     "tests/test_engine.py"
+    ]
+   },
+   {
+    "category": "bugfix",
+    "title": "Implement the documented duplicate_column / copied_across_files check",
+    "description": "The datacheck.py docstring (line 5) promises 'a whole column repeated under another label, possibly in another file', but _duplicate_columns (line 185) skips exact copies ('reported by the block check') and only emits derived_column. Add an exact cross-file column match that names both files and both column labels, and emits data.copied_across_files. That id is already counted as an integrity signal.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/datacheck.py"
+    ]
+   },
+   {
+    "category": "security",
+    "title": "Block drive-by POSTs to the local engine",
+    "description": "CORS (server.py:27) only stops other sites from reading responses. Any web page can still fire 'simple' cross-site POSTs to 127.0.0.1, such as a multipart /api/scan or a bodiless POST to /api/runs/{rid}/investigate. The investigate call spends the user's saved AI key. Fix: require a per-launch random token header (set by the Mac app and the web dist) and reject requests whose Origin is not localhost.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/server.py",
+     "web/src/api.ts",
+     "mac/Sources/PaperInspector/Engine.swift"
+    ]
+   },
+   {
+    "category": "bugfix",
+    "title": "Job queue with limits, cancellation and pruning",
+    "description": "JOBS (server.py:31) is never pruned and is lost on restart, and each request starts an unbounded daemon thread (server.py:52). Several DOI scans at once can exhaust memory (OpenCV plus panels). Add a bounded worker pool, a cancel endpoint, job persistence under HOME/jobs, and a TTL cleanup. Show the queue and a Cancel button in RunView and App.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/server.py",
+     "web/src/App.tsx",
+     "mac/Sources/PaperInspector/Engine.swift"
+    ]
+   },
+   {
+    "category": "statistics",
+    "title": "Wider GRIM coverage: 1-3 decimals, multi-item scales, n up to the granularity limit",
+    "description": "GRIM_RE (stats.py:115) only matches 2-decimal means, and grim() drops n>99 (line 125). GRIM works for any n < 10^d, and for k-item scales the granularity is 1/(n*k). Extend it to 1 and 3 decimals, parse 'k-item'/'Likert' context to multiply n, and accept 'M = x.xx, n = y' APA formats.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/stats.py"
+    ]
+   },
+   {
+    "category": "statistics",
+    "title": "GRIMMER: check SDs against means and n",
+    "description": "Add GRIMMER (Anaya 2016) for integer data: given mean, SD and n, test whether any integer sample sum-of-squares gives that SD after rounding. Parse 'mean \u00b1 SD (n = x)' from the text (PM_RE already exists, stats.py:155) and from table rows. Emit stats.grimmer as an integrity signal.",
+    "value": 5,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/stats.py",
+     "engine/paperinspector/models.py"
+    ]
+   },
+   {
+    "category": "statistics",
+    "title": "SPRITE reconstruction for bounded scales",
+    "description": "For Likert or bounded integer data with mean, SD, n and scale bounds, run SPRITE (Heathers 2018) to search for any feasible sample. Report 'no possible sample' as a high-confidence impossibility, and show example reconstructions as a histogram evidence image.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/stats.py",
+     "engine/paperinspector/evidence.py"
+    ]
+   },
+   {
+    "category": "statistics",
+    "title": "DEBIT check for binary-variable means and SDs",
+    "description": "For proportions reported as mean \u00b1 SD of a 0/1 variable (e.g. 'sex (male) 0.45 \u00b1 0.50'), check the SD against sqrt(p(1-p)\u00b7n/(n-1)) using DEBIT (Heathers & Brown 2019).",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/stats.py"
+    ]
+   },
+   {
+    "category": "statistics",
+    "title": "GRIM and GRIMMER on supplementary tables",
+    "description": "datacheck.check only screens raw columns. Detect summary tables whose headers are mean/SD/SEM/n (SPREAD_H, datacheck.py:339, already finds SD columns). Pair them row by row and run GRIM, GRIMMER and SEM\u2194SD consistency per row, with cell references.",
+    "value": 5,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/datacheck.py",
+     "engine/paperinspector/stats.py"
+    ]
+   },
+   {
+    "category": "statistics",
+    "title": "Carlisle baseline-balance test for trials",
+    "description": "For RCT Table 1 (baseline means/SD by arm), recompute per-variable p-values and combine them (Stouffer/Fisher, Carlisle 2017). Flag distributions that are too uniform or too extreme: a fabrication sign when arms are 'too similar'. Detect trials with reporting.TRIAL (reporting.py:196).",
+    "value": 5,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/stats.py",
+     "engine/paperinspector/tables.py",
+     "engine/paperinspector/reporting.py"
+    ]
+   },
+   {
+    "category": "statistics",
+    "title": "statcheck one-tailed handling",
+    "description": "recompute() (stats.py:86) always computes two-tailed p. statcheck treats a result as consistent if 'one-tailed'/'one-sided' appears nearby and p_reported \u2248 p/2. Without this, one-sided tests are false positives and cost credibility.",
+    "value": 4,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/stats.py"
+    ]
+   },
+   {
+    "category": "statistics",
+    "title": "More test statistics for recompute",
+    "description": "Add Mann-Whitney U (normal approximation with n1,n2), Wilcoxon W/T, Kruskal-Wallis H(df), Cochran Q, regression \u03b2 with SE (t = \u03b2/SE), Welch t with fractional df, and the 't = 2.1, df = 18' order. TESTS at stats.py:24 covers only t, F, r, chi2, z.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/stats.py"
+    ]
+   },
+   {
+    "category": "statistics",
+    "title": "Check p-values against confidence intervals",
+    "description": "Implement Altman & Bland: from an estimate with a 95% CI (mean difference, or OR/HR/RR on the log scale), derive SE, z and p, then compare with the reported p. Also flag ratio CIs that are not symmetric on the log scale, and CIs that do not contain the point estimate.",
+    "value": 5,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/stats.py"
+    ]
+   },
+   {
+    "category": "statistics",
+    "title": "Check df against stated sample sizes",
+    "description": "Cross-check t(df) and F(d1,d2) against the n per group in the same paragraph or legend (df should be n1+n2-2 for a two-sample t). Mismatches suggest dropped animals or recycled results.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/stats.py"
+    ]
+   },
+   {
+    "category": "statistics",
+    "title": "Implement the p-curve check",
+    "description": "stats.pcurve is listed as an integrity signal (models.py:135) but does not exist. Collect all exact p-values and test whether significant p's bunch just below .05 (.04-.05 vs .03-.04 caliper test) or show right skew. Low weight, paper-level only.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/stats.py",
+     "engine/paperinspector/models.py"
+    ]
+   },
+   {
+    "category": "statistics",
+    "title": "Detect SEM labelled as SD",
+    "description": "If values labelled SD equal another spread \u00d7 sqrt(n), or 'SD' values imply CVs that are implausibly low for the assay, flag possible SD/SEM confusion. Also check that the reported CI width matches the SE.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/stats.py"
+    ]
+   },
+   {
+    "category": "statistics",
+    "title": "Flag inconsistent sample sizes across the paper",
+    "description": "Extract every 'n = x' tied to groups or experiments from methods, legends and results, and flag the same group reported with different n. Also flag n stated in legends that differs from the number of dots in dot plots.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/stats.py",
+     "engine/paperinspector/pdfdoc.py"
+    ]
+   },
+   {
+    "category": "statistics",
+    "title": "More impossible values in the text",
+    "description": "Extend impossible() (stats.py:179) to |r| > 1, R\u00b2 outside [0,1], negative SD/SEM/variance, percentages above 100, and SD > (max-min)/2 for bounded scales (a Likert SD bigger than the range allows). Treat 'p = 0.000' as an SPSS habit, not an impossibility.",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/stats.py"
+    ]
+   },
+   {
+    "category": "statistics",
+    "title": "Check significance stars against p-values",
+    "description": "Parse legend keys ('*p<0.05, **p<0.01') and reported exact p-values for the same comparison. Flag stars that contradict the p-values, and stars with no test named in the methods.",
+    "value": 3,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/stats.py",
+     "engine/paperinspector/reporting.py"
+    ]
+   },
+   {
+    "category": "statistics",
+    "title": "Check that percentages sum to 100",
+    "description": "For tables or text breakdowns of one categorical variable (e.g. 'stage I 23%, II 41%, III 30%'), check the sum is within rounding of 100, and check counts against the group n. Extends percent() (stats.py:138).",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/stats.py",
+     "engine/paperinspector/datacheck.py"
+    ]
+   },
+   {
+    "category": "statistics",
+    "title": "Flag implausible effect sizes",
+    "description": "Compute Cohen's d from means/SD/n or from t and df. Flag d > 3 in behavioural or clinical outcomes, or many large effects with tiny n (Data Colada 'too good to be true'). Quality note, with a field-specific threshold.",
+    "value": 2,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/stats.py"
+    ]
+   },
+   {
+    "category": "statistics",
+    "title": "Flag variance that is too low across groups (Fisher's method)",
+    "description": "Simonsohn's test: given means, SDs and n, simulate how similar the SDs across groups should be. Flag SDs that are more homogeneous than chance (p<0.01). This is a principled version of repeated_spread (stats.py:158), which only checks exact string repeats.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/stats.py"
+    ]
+   },
+   {
+    "category": "statistics",
+    "title": "Recompute summaries from raw supplementary data",
+    "description": "When the supplements hold raw per-sample values, recompute means, SD, SEM and simple tests per group, then compare them with numbers in the text, tables and legends. Disagreement is one of the strongest available signals.",
+    "value": 5,
+    "effort": 4,
+    "files": [
+     "engine/paperinspector/datacheck.py",
+     "engine/paperinspector/stats.py"
+    ]
+   },
+   {
+    "category": "statistics",
+    "title": "Note multiple comparisons without correction",
+    "description": "Quality note when there are many tests per figure (e.g. >10 pairwise t-tests) and no Bonferroni, Holm, FDR, Tukey or Dunnett mention in the methods.",
+    "value": 2,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/reporting.py"
+    ]
+   },
+   {
+    "category": "data",
+    "title": "Excel calcChain and sharedStrings order forensics",
+    "description": "Data Colada (Gino case) used xl/calcChain.xml to show rows that had been moved in a spreadsheet. Parse calcChain.xml and sharedStrings order in read_xlsx (tables.py:77) and flag rows whose formula order or string-entry order disagrees with their sorted position, especially when they decide a group difference.",
+    "value": 5,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/tables.py",
+     "engine/paperinspector/datacheck.py"
+    ]
+   },
+   {
+    "category": "data",
+    "title": "Office document metadata timeline",
+    "description": "Read docProps/core.xml and app.xml (creator, lastModifiedBy, created, modified, application, revision count) from xlsx/docx supplements. Flag data files created after acceptance, and authors from outside the author list (a possible paper-mill or ghost-writing trace).",
+    "value": 4,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/tables.py",
+     "engine/paperinspector/sources.py"
+    ]
+   },
+   {
+    "category": "data",
+    "title": "Benford first-digit test for multi-magnitude data",
+    "description": "Only terminal digits are tested now (datacheck.py:239). Add a Benford first-digit and second-digit test for columns spanning \u22652 orders of magnitude (counts, concentrations, financial data), gated by range to avoid misuse.",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/datacheck.py"
+    ]
+   },
+   {
+    "category": "data",
+    "title": "Duplicate runs with a constant offset or multiplier",
+    "description": "derived_column (datacheck.py:185) only catches whole-column linear transforms. Find partial runs of 6 or more rows where block B = A + c or A \u00d7 k, i.e. data copied and nudged. This is a common fabrication pattern that _duplicate_blocks misses because values are not equal.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/datacheck.py"
+    ]
+   },
+   {
+    "category": "data",
+    "title": "Flag numbers stored as text and mixed number formats",
+    "description": "In one column, flag a mix of numeric cells and numbers stored as text, mixed decimal-place formats, or mixed fill colours. These are traces of values typed in by hand among instrument exports. Extends _mixed_fonts (datacheck.py:403).",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/datacheck.py",
+     "engine/paperinspector/tables.py"
+    ]
+   },
+   {
+    "category": "data",
+    "title": "Values that repeat in their trailing digits",
+    "description": "Flag replicate values that share their last 3 or more digits while the leading digits differ (e.g. 12.4837, 15.4837). This is a trace of editing the leading digits of copied numbers.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/datacheck.py"
+    ]
+   },
+   {
+    "category": "data",
+    "title": "Arithmetic progressions and suspiciously smooth series",
+    "description": "Flag measurement columns that are near-exact arithmetic or geometric sequences, or time series whose second differences are too regular for measured data. These are fabricated growth curves.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/datacheck.py"
+    ]
+   },
+   {
+    "category": "data",
+    "title": "qPCR Ct sanity checks",
+    "description": "Detect Ct/Cq columns and flag: reference-gene Cts with SD < 0.05 across conditions, Ct > 40, \u0394\u0394Ct fold changes that cannot be reproduced from the listed Cts, and identical Ct triplicates. Check that MIQE items (efficiency, reference genes) are named.",
+    "value": 3,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/datacheck.py",
+     "engine/paperinspector/reporting.py"
+    ]
+   },
+   {
+    "category": "data",
+    "title": "Supplementary inventory: files cited but missing",
+    "description": "Parse 'Table S7', 'Supplementary Data 3' and 'Movie S2' references in the text and compare them with what fetch.py actually retrieved. List missing or unreachable supplements, and supplement links that 404.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/reporting.py",
+     "engine/paperinspector/fetch.py",
+     "engine/paperinspector/sources.py"
+    ]
+   },
+   {
+    "category": "data",
+    "title": "Raw data impossibly precise for the instrument",
+    "description": "Flag weights, ages, cell counts or ODs with more significant digits than plausible, or integer-only quantities that have decimals. Uses _sig_digits (datacheck.py:88) per header type.",
+    "value": 2,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/datacheck.py"
+    ]
+   },
+   {
+    "category": "data",
+    "title": "Excel autocorrect beyond dates",
+    "description": "Extend _gene_dates (datacheck.py:363) to flag scientific-notation-mangled IDs in all columns, leading zeros stripped from IDs, and 'MARCH1'/'DEC1' variants. Also report HGNC-renamed symbols (SEPT\u2192SEPTIN).",
+    "value": 2,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/datacheck.py"
+    ]
+   },
+   {
+    "category": "data",
+    "title": "Repository files and paper n",
+    "description": "For GEO/SRA/ArrayExpress accessions, fetch the sample count and release date. Compare them with the paper's stated n and groups. Flag a release date after publication (data deposited late or never public).",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/history.py"
+    ]
+   },
+   {
+    "category": "data",
+    "title": "More repositories in the accession check",
+    "description": "ACCESSION (history.py:22) knows only GSE/GDS/SRP/SRR/SRX/PRJNA. Add GSM, PRJEB/ERP/ERR (ENA), E-MTAB (ArrayExpress), PXD (ProteomeXchange), MSV (MassIVE), MTBLS, PDB IDs, EGA, dbGaP phs, and Zenodo/figshare/Dryad DOIs via DataCite. Check that each exists and is public.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/history.py"
+    ]
+   },
+   {
+    "category": "data",
+    "title": "Code availability links resolve",
+    "description": "Extract GitHub, GitLab, Zenodo and OSF links from code and data availability statements. Check that they resolve, are not empty repositories, and were created before publication.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/reporting.py",
+     "engine/paperinspector/history.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Detect the same embedded image object placed twice",
+    "description": "pdfdoc renders clip regions (pdfdoc.py:200) and never looks at the PDF's image XObjects. Two placements that point to the same xref, or to streams with the same MD5, under different panel labels are a near-certain duplicate at almost no cost. Use page.get_images(full=True) and get_image_rects.",
+    "value": 5,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/pdfdoc.py",
+     "engine/paperinspector/pipeline.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Analyse native embedded image pixels",
+    "description": "Extract the original embedded images with doc.extract_image instead of re-rendering at a chosen DPI. This keeps the original JPEG compression, ICC profile and resolution, so noise forensics and JPEG-grid analysis can work. Map panel boxes back to source pixels.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/pdfdoc.py",
+     "engine/paperinspector/models.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Classify duplicates into Bik categories I-III",
+    "description": "Label each image.duplicate as Category I (simple duplication), II (repositioned: shifted, rotated, flipped, rescaled, from imgdup's M and flip) or III (altered: duplicated with clones or edits inside). Bik et al. 2016 show Category II/III are far more likely to be misconduct. Use the category in severity and in the PubPeer text.",
+    "value": 5,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/report.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Lane- and band-level blot duplication",
+    "description": "Segment blots into lanes and band crops, then compare band shapes across all blots in the paper. Normalise intensity and exposure, and allow the strip to be stretched horizontally. This catches the same band reused for different proteins or conditions, which keypoint matching on whole panels misses because bands are low in texture.",
+    "value": 5,
+    "effort": 4,
+    "files": [
+     "engine/paperinspector/imgdup.py",
+     "engine/paperinspector/panels.py",
+     "engine/paperinspector/pipeline.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Loading-control reuse detector",
+    "description": "Use OCR labels (\u03b2-actin, GAPDH, tubulin, Histone H3) to identify loading-control strips, then compare every loading control across figures and across the author corpus with relaxed thresholds. Reused loading controls are among the most common blot problems on PubPeer.",
+    "value": 5,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/imgutil.py",
+     "engine/paperinspector/imgdup.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Match blots shown inverted or at a different contrast",
+    "description": "Blots are often shown as negatives or at another exposure. Add an inverted-intensity descriptor pass and CLAHE-normalised matching in imgdup.features (imgdup.py:86), so that the same blot shown as dark-on-light and light-on-dark still matches.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/imgdup.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Pasted bands: background boxes around bands",
+    "description": "Detect rectangular regions around single bands whose background noise level, mean or JPEG grid differs from the surrounding blot: a pasted-band halo. Run a local noise-variance map over each blot.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/forensics.py",
+     "engine/paperinspector/pipeline.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Splice detection on micrographs and photos",
+    "description": "Seam detection runs only when p.kind == 'blot' (pipeline.py:270). Run a stricter version on micrographs and photos to catch composite fields of view. Also check vertical seams for blots (axes=('x',) by default, forensics.py:25).",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/forensics.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "JPEG block-grid misalignment and double compression",
+    "description": "On native JPEG panels, estimate the 8\u00d78 block-artifact grid phase locally (BAG) and the DCT double-quantisation histograms. Regions whose grid is shifted, or that lack double quantisation, were pasted in from another image.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/forensics.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Inconsistent noise residuals",
+    "description": "Compute a wavelet or median-filter noise residual and map local noise variance and kurtosis. Report regions whose noise differs strongly from the rest of the panel (splicing, inpainting). Show the map as a new forensics.view mode.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/forensics.py",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Rotated, flipped and rescaled clones within one panel",
+    "description": "clone.find (clone.py:51) only reports copies with the same orientation. Add mirrored and rotated keypoint self-matching, with RANSAC per cluster, so that clone-stamped regions that were flipped or rotated to hide the copy are caught (as in Bik's histology cases).",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/clone.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Merged-channel consistency in fluorescence",
+    "description": "When a figure shows separate channels plus a 'Merge', check that the merge equals the overlay of the individual channels after alignment. Flag merges that don't match, or a channel reused between conditions. _channel_relation (pipeline.py:154) only handles pairs.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/imgutil.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Check insets against their parent images",
+    "description": "Detect insets and 'magnified' panels via boxes drawn in the parent image and legend wording. Verify that each zoom matches the marked parent region at the right scale. Flag insets that come from a different image, and insets that match a parent labelled as a different condition.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/imgdup.py",
+     "engine/paperinspector/panels.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Scale-bar consistency",
+    "description": "OCR the scale-bar labels and measure the bar length in pixels, giving \u00b5m per pixel per panel. Flag panels with the same stated magnification but different scales. Flag a duplicated image carrying two different scale bars, which is strong evidence of mislabelled reuse.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/imgutil.py",
+     "engine/paperinspector/pipeline.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Flow cytometry plot classifier",
+    "description": "Add a 'flow' kind in panels.classify (panels.py:207): dot and density plots with quadrant gates and percentages. Today these fall into 'chart' and are only compared by dhash (imgdup.py:286), so partially reused FACS plots are missed.",
+    "value": 5,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/panels.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Point-cloud matching for flow cytometry duplicates",
+    "description": "For flow plots, extract the dot centroids and register the point clouds (ICP or RANSAC) across panels. This allows for re-gated copies with different quadrant numbers and axes. Bik and others found many FACS plots reused under different conditions.",
+    "value": 5,
+    "effort": 4,
+    "files": [
+     "engine/paperinspector/imgdup.py",
+     "engine/paperinspector/pipeline.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Flow cytometry quadrant arithmetic",
+    "description": "OCR the quadrant percentages. Check that the four quadrants sum to about 100% (or to the parent gate), and that identical numbers do not repeat across panels with different conditions.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/imgutil.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Digitise bar charts to find reused data",
+    "description": "Extract bar heights, error-bar lengths and dot positions from chart panels (axis OCR plus bar detection). Compare the series across figures, and catch reused data drawn as different charts, which dhash (imgdup.py:286) misses unless the pixels are identical.",
+    "value": 4,
+    "effort": 4,
+    "files": [
+     "engine/paperinspector/imgdup.py",
+     "engine/paperinspector/panels.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Compare chart values with text and tables",
+    "description": "Use the digitised values from charts to cross-check numbers stated in the text ('increased 3.2-fold') and in tables. Flag disagreements beyond reading error.",
+    "value": 3,
+    "effort": 5,
+    "files": [
+     "engine/paperinspector/stats.py",
+     "engine/paperinspector/reporting.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Count dots in dot plots against n",
+    "description": "Count the individual points per group in scatter/dot plots and compare with the legend's n. Fewer points than n suggests dropped data; more suggests mislabelling.",
+    "value": 3,
+    "effort": 4,
+    "files": [
+     "engine/paperinspector/panels.py",
+     "engine/paperinspector/stats.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Molecular-weight marker consistency",
+    "description": "OCR the kDa ladder labels per blot and estimate band positions. Flag the same blot or band shown at different kDa positions in different figures, and band sizes inconsistent with the protein's expected weight (UniProt lookup).",
+    "value": 3,
+    "effort": 4,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/imgutil.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Detect AI-generated or synthetic images",
+    "description": "Look for diffusion/GAN spectral fingerprints (periodic high-frequency peaks in the FFT), unnaturally uniform blot band shapes, and repeated identical background textures. Paper-mill 'synthetic western blots' (Byrne/Bik 2020-22) share templated backgrounds across papers. Report as a low-weight signal with an FFT evidence image.",
+    "value": 4,
+    "effort": 4,
+    "files": [
+     "engine/paperinspector/forensics.py",
+     "engine/paperinspector/evidence.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Match against a library of known paper-mill images",
+    "description": "Ship and refresh a fingerprint index of images from known paper-mill clusters (e.g. the 'tadpole' blot series) and retracted figures. Match every new panel against it. A hit is a strong signal that a paper belongs to a known mill.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/imgdup.py",
+     "engine/paperinspector/settings.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Deeper image file metadata",
+    "description": "sources._exif (sources.py:71) reads only basic EXIF software. Also parse TIFF ImageDescription (ImageJ/\u00b5Manager/Zeiss/Leica acquisition data), XMP Photoshop history (HistoryAction and layers), DateTimeOriginal later than submission, and different cameras within one 'experiment'.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/sources.py",
+     "engine/paperinspector/pipeline.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Detect upsampled panels and mixed resolutions",
+    "description": "Detect panels that were interpolated up (periodic correlations in the second derivative, blocky pixels). Flag panels in one figure with very different native resolution, which suggests screenshots or images taken from elsewhere. _native_dpi already exists (pdfdoc.py:190).",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/pdfdoc.py",
+     "engine/paperinspector/forensics.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Detect overlapping fields of view",
+    "description": "Report the fraction of overlap for partially overlapping micrographs (same tissue, slightly moved stage) and label them 'overlap'. Stitched tiles from one slide presented as different animals is a common Category II problem.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/imgdup.py",
+     "engine/paperinspector/pipeline.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Histology stain-invariant matching",
+    "description": "Match H&E and IHC panels after colour deconvolution (hematoxylin channel), so that the same tissue section shown with re-balanced colours or a changed white balance still matches.",
+    "value": 3,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/imgdup.py",
+     "engine/paperinspector/imgutil.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Gel and blot panels cropped too tightly",
+    "description": "Flag blots cropped to the band only, with less than about 1 band-height of background above and below. Journals (JBC, Nature) require context; tight crops hide splices. Combine with a check for uncropped blots in the supplement.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/reporting.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Check that uncropped blots are supplied",
+    "description": "If the paper has blot panels but no supplement or figure mentions 'uncropped', 'full-length' or 'original blots', add a quality note. If uncropped blots exist, match each cropped panel to its uncropped source and report mismatches.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/reporting.py",
+     "engine/paperinspector/imgdup.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Reconsider panels the classifier dropped",
+    "description": "Panels classed 'chart' or 'text' are skipped for keypoint matching (imgdup.py:87). Add a second, cheaper pass over large 'chart' panels with real texture. This catches micrographs misclassified because of white borders. Log the class counts for auditing.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/imgdup.py",
+     "engine/paperinspector/panels.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Compare figures across preprint and published versions",
+    "description": "Fetch the bioRxiv/medRxiv preprint (fetch._biorxiv exists) and compare its figures with the published version. Flag panels that changed without explanation, and panels that were swapped between conditions. This often reveals silent fixes of duplicated images.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/fetch.py",
+     "engine/paperinspector/pipeline.py"
+    ]
+   },
+   {
+    "category": "images",
+    "title": "Compare corrections and corrigenda with the original",
+    "description": "When record.correction is present, fetch the correction PDF and diff the replacement figure against the original. A 'corrected' figure that still contains the duplicated region, or that only re-crops it, is reportable.",
+    "value": 3,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/reporting.py",
+     "engine/paperinspector/fetch.py"
+    ]
+   },
+   {
+    "category": "text",
+    "title": "Load the full Problematic Paper Screener fingerprint list",
+    "description": "TORTURED (textcheck.py:24) hard-codes about 60 phrases. Load the PPS tortured-phrase list (thousands of fingerprints) from a bundled versioned file with optional online refresh, and keep context rules for weak terms. This one change greatly improves paper-mill recall.",
+    "value": 5,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/textcheck.py",
+     "engine/paperinspector/settings.py"
+    ]
+   },
+   {
+    "category": "text",
+    "title": "Excess LLM vocabulary",
+    "description": "Measure the frequency of words that rose sharply after 2023 (delve, intricate, meticulous, commendable, showcasing, underscore, pivotal; Kobak et al. 2024) per 10k words against a pre-2022 baseline. Report a z-score as a low-weight signal, separate from chatbot boilerplate.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/textcheck.py"
+    ]
+   },
+   {
+    "category": "text",
+    "title": "More chatbot boilerplate patterns",
+    "description": "Extend AI_PHRASES (textcheck.py:14) with 'I'm sorry, but', 'as of my last update', 'Note: The above', 'feel free to', 'In summary, this study' at section starts, unfilled '[Author Name]' or '[Your Institution]' placeholders, and Markdown artefacts ('**', '###') in the PDF text.",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/textcheck.py"
+    ]
+   },
+   {
+    "category": "text",
+    "title": "Detect paper-mill title and abstract templates",
+    "description": "Detect templated mill structures such as 'lncRNA X promotes Y progression via the miR-Z/W axis' and 'circRNA_\u2026 sponges miR-\u2026 to regulate \u2026', and score them with features from Byrne & Labb\u00e9 (template titles, generic cell lines, single-gene ncRNA cancer topics). Report as a low-weight prior, not proof.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/textcheck.py"
+    ]
+   },
+   {
+    "category": "text",
+    "title": "Verify primer and siRNA sequences (Seek & Blastn)",
+    "description": "Extract nucleotide sequences (primers, siRNA/shRNA, sgRNA) from the text and tables, BLAST them (NCBI web BLAST or local) against the stated target gene and organism, and flag sequences that target the wrong gene or nothing. Byrne & Labb\u00e9 found many such reagent errors in paper-mill papers.",
+    "value": 5,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/textcheck.py",
+     "engine/paperinspector/history.py"
+    ]
+   },
+   {
+    "category": "text",
+    "title": "Check cell lines against Cellosaurus",
+    "description": "Use the Cellosaurus API, which covers ICLAC lines, 'problematic' annotations, contamination and nonexistent lines, instead of only the ICLAC xlsx (reporting.py:32). Also flag cell line names that do not exist, which is common in paper mills, and missing STR authentication.",
+    "value": 5,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/reporting.py"
+    ]
+   },
+   {
+    "category": "text",
+    "title": "Validate antibody RRIDs and catalogue numbers",
+    "description": "Extract antibodies (vendor, catalogue number, RRID) and validate them against the Antibody Registry/SciCrunch. Flag discontinued or nonexistent products, species reactivity that does not match the model organism, and the same catalogue number used for different targets.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/reporting.py"
+    ]
+   },
+   {
+    "category": "text",
+    "title": "Check gene symbols match the organism",
+    "description": "Flag human-style uppercase gene symbols (TP53) in mouse experiments where Trp53 is expected, and the reverse, and symbols that do not exist in HGNC/MGI. This is a sign of copy-paste templating across species.",
+    "value": 3,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/textcheck.py"
+    ]
+   },
+   {
+    "category": "text",
+    "title": "Methods recycled from the authors' earlier papers",
+    "description": "Fetch the OA full text of the authors' previous papers (OpenAlex/Europe PMC) and compute shingled n-gram overlap on the methods, results and discussion. Methods overlap is expected; results or discussion overlap points to duplicate publication.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/textcheck.py",
+     "engine/paperinspector/history.py"
+    ]
+   },
+   {
+    "category": "text",
+    "title": "Check methods describe what the results show",
+    "description": "Map the techniques named in the methods (western blot, flow cytometry, qPCR, IHC) against the panel kinds detected and the results text. Flag techniques shown but never described, and techniques described but never shown (template methods).",
+    "value": 3,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/reporting.py"
+    ]
+   },
+   {
+    "category": "text",
+    "title": "Identical figure legends",
+    "description": "Flag legends that repeat verbatim across figures while describing different experiments, and legends whose n, statistics or units contradict the methods.",
+    "value": 2,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/reporting.py",
+     "engine/paperinspector/pdfdoc.py"
+    ]
+   },
+   {
+    "category": "text",
+    "title": "Hidden-prompt detection for more PDF tricks",
+    "description": "hidden_text (textcheck.py:145) catches white, tiny, off-page and transparent text. Also check text on top of an image with the same colour as the pixels beneath, text in PDF annotations and metadata (Keywords/Subject), rendering mode 3 (invisible), and OCG layers that are turned off.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/textcheck.py"
+    ]
+   },
+   {
+    "category": "text",
+    "title": "Check the AI-use statement against the journal policy",
+    "description": "Parse AI disclosure statements. Flag 'ChatGPT used for writing' with no disclosure section where the journal requires one, and chatbot boilerplate in papers with no statement at all. text.ai_statement only fires when the paper explicitly denies AI use.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/textcheck.py"
+    ]
+   },
+   {
+    "category": "text",
+    "title": "Flag sentences rewritten by a paraphrasing tool",
+    "description": "Beyond the fixed phrase list, flag rare collocations where a standard bigram is replaced by an unlikely synonym, scored with a language-model or n-gram frequency model. Report the top 10 suspicious bigrams with their likely originals.",
+    "value": 3,
+    "effort": 4,
+    "files": [
+     "engine/paperinspector/textcheck.py"
+    ]
+   },
+   {
+    "category": "refs",
+    "title": "DOI points to a different paper than the cited title",
+    "description": "refcheck checks that DOIs exist (refcheck.py:120) but not that each DOI's title matches the cited title. AI-fabricated reference lists often attach real DOIs to invented titles. Compare the Crossref title of each cited DOI with the reference text, using _similar (refcheck.py:95).",
+    "value": 5,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/refcheck.py"
+    ]
+   },
+   {
+    "category": "refs",
+    "title": "Integrate the Retraction Watch database",
+    "description": "Use the Retraction Watch data now openly available via Crossref (CSV or API) for the paper, its references and its authors' work, with retraction reasons (image manipulation, paper mill, fake peer review) and dates. Reasons are far more informative than OpenAlex's is_retracted flag.",
+    "value": 5,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/refcheck.py",
+     "engine/paperinspector/history.py",
+     "engine/paperinspector/reporting.py"
+    ]
+   },
+   {
+    "category": "refs",
+    "title": "Separate references cited after their retraction",
+    "description": "Separate references that were already retracted when this paper was submitted (a serious problem) from those retracted later (benign). Uses the retraction date from Retraction Watch/Crossref against the received date in timeline().",
+    "value": 4,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/refcheck.py",
+     "engine/paperinspector/reporting.py"
+    ]
+   },
+   {
+    "category": "refs",
+    "title": "List exactly which references were sneaked in",
+    "description": "_sneaked (history.py:43) only compares counts. Diff the deposited Crossref references against the printed list and name the extra works and their authors. Sneaked references usually benefit a specific person (Besan\u00e7on et al. 2024).",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/history.py"
+    ]
+   },
+   {
+    "category": "refs",
+    "title": "Detect citation cartels and stacking between journals",
+    "description": "Look for concentrated citations to 2-3 venues, and for citation exchange in both directions between those venues and the paper's journal (OpenAlex cited_by and referenced_works). Extends refs.journal_self (refcheck.py:239).",
+    "value": 3,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/refcheck.py"
+    ]
+   },
+   {
+    "category": "refs",
+    "title": "Citations to predatory or hijacked journals",
+    "description": "Check cited venues against a bundled list of hijacked and predatory journals (Retraction Watch Hijacked Journal Checker, Beall archive, Scopus discontinued titles). Do the same for the paper's own journal.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/refcheck.py",
+     "engine/paperinspector/reporting.py"
+    ]
+   },
+   {
+    "category": "refs",
+    "title": "Check that cited works support the claims",
+    "description": "For each in-text citation, take the citing sentence and the cited abstract, then score support with embeddings or the configured LLM. List citations that appear irrelevant, which suggests citation padding or AI-invented support.",
+    "value": 4,
+    "effort": 4,
+    "files": [
+     "engine/paperinspector/refcheck.py",
+     "engine/paperinspector/agent.py"
+    ]
+   },
+   {
+    "category": "refs",
+    "title": "References with impossible dates",
+    "description": "Flag references published after this paper's acceptance (other than 'in press'), and references to the authors' own future papers. Such references suggest a recycled or edited reference list.",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/refcheck.py"
+    ]
+   },
+   {
+    "category": "refs",
+    "title": "Analyse who cites this paper",
+    "description": "Using OpenAlex cited_by, flag rapid citation bursts from a small set of authors or venues, or from papers that are themselves retracted or flagged. This is how citation-boosting rings show up.",
+    "value": 3,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/refcheck.py",
+     "engine/paperinspector/history.py"
+    ]
+   },
+   {
+    "category": "refs",
+    "title": "Self-citation per author, not just per paper",
+    "description": "refs.self_citation (refcheck.py:206) aggregates over all authors. Report self-citation per author and flag one author who accounts for most of it. Show where it sits on the field distribution (Ioannidis self-citation metrics).",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/refcheck.py"
+    ]
+   },
+   {
+    "category": "refs",
+    "title": "Find references without a DOI via OpenAlex too",
+    "description": "References without a DOI are only looked up in Crossref (refcheck.py:146), and books, theses and conferences are skipped. Add OpenAlex title search and Semantic Scholar as fallbacks to cut 'unverified' false positives, and show the best match with a similarity score.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/refcheck.py"
+    ]
+   },
+   {
+    "category": "record",
+    "title": "Show existing PubPeer comments",
+    "description": "Query PubPeer's public API by DOI and show the comment count, latest comment dates and links in the paper tab. This is the most direct signal that experts have already raised concerns. Also offer to append to an existing thread.",
+    "value": 5,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/history.py",
+     "web/src/PaperTab.tsx",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "record",
+    "title": "Special issue and guest-editor flag",
+    "description": "Detect special-issue articles (Crossref relation and assertion metadata, landing-page text). Hindawi, IOP and MDPI mass retractions centred on guest-edited issues. Combine with fast acceptance (reporting.py:173) into one 'special-issue mill risk' note.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/fetch.py",
+     "engine/paperinspector/reporting.py"
+    ]
+   },
+   {
+    "category": "record",
+    "title": "Journal-level risk context",
+    "description": "Show the journal's retraction count and rate (Retraction Watch), Scopus/WoS delisting status, DOAJ membership and hijack status. This gives context only and is never part of the score.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/history.py",
+     "web/src/PaperTab.tsx"
+    ]
+   },
+   {
+    "category": "record",
+    "title": "Hyperprolific author flag",
+    "description": "Using OpenAlex per-author yearly counts, flag authors with more than 72 papers in a year (Ioannidis 2018 hyperprolific threshold), and implausible bursts across unrelated fields.",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/history.py"
+    ]
+   },
+   {
+    "category": "record",
+    "title": "ORCID record checks",
+    "description": "For listed ORCIDs, check that the record exists, its creation date (just before submission is common in mills), whether its employment matches the affiliation, and the number of works. Flag ORCIDs attached to the wrong name.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/history.py",
+     "engine/paperinspector/fetch.py"
+    ]
+   },
+   {
+    "category": "record",
+    "title": "Check the corresponding author's email domain",
+    "description": "Flag corresponding emails on free webmail (163.com, gmail) when the affiliations are institutional, and email names that do not match any author. These are paper-mill and authorship-for-sale traces (Hindawi and Wiley investigations).",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/reporting.py",
+     "engine/paperinspector/fetch.py"
+    ]
+   },
+   {
+    "category": "record",
+    "title": "Authors and affiliations that do not fit the topic",
+    "description": "Flag author affiliations whose OpenAlex topic history is unrelated to this paper's field (e.g. orthopaedic surgeons publishing deep-learning papers), and authors with no prior record in the field.",
+    "value": 2,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/history.py"
+    ]
+   },
+   {
+    "category": "record",
+    "title": "Validate grant numbers",
+    "description": "Parse grant IDs and check them against NIH RePORTER, NSF, the Crossref Funder Registry and NSFC formats. Flag nonexistent grants, grants for unrelated projects, and one grant cited in implausibly many unrelated papers.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/reporting.py",
+     "engine/paperinspector/history.py"
+    ]
+   },
+   {
+    "category": "record",
+    "title": "Duplicate submission by different authors",
+    "description": "Search OpenAlex and Europe PMC for near-identical abstracts or titles by other authors. Paper mills resell the same manuscript. _duplicates (history.py:67) only searches the first and last authors' own works.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/history.py"
+    ]
+   },
+   {
+    "category": "record",
+    "title": "Screen published peer-review reports",
+    "description": "For journals that publish reviews (eLife, PLOS, Nature transparent review, BMC, F1000), fetch the reports. Flag generic or AI-written reviews, reviewers demanding citations to themselves (coercive citation), and suspiciously short reviews. These are traces of peer-review rings.",
+    "value": 3,
+    "effort": 4,
+    "files": [
+     "engine/paperinspector/fetch.py",
+     "engine/paperinspector/textcheck.py"
+    ]
+   },
+   {
+    "category": "record",
+    "title": "Check ethics approval numbers",
+    "description": "Extract IRB/IACUC approval numbers and institutions. Flag an approval body unrelated to the authors' affiliations, approval dates after the study period, and the same approval number reused across unrelated papers (corpus index).",
+    "value": 3,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/reporting.py"
+    ]
+   },
+   {
+    "category": "record",
+    "title": "Authorship change between preprint and paper",
+    "description": "Compare the author list of the preprint or earlier version with the published one. Authors added late with no contribution statement are a sign of authorship for sale.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/history.py",
+     "engine/paperinspector/fetch.py"
+    ]
+   },
+   {
+    "category": "reporting",
+    "title": "ARRIVE 2.0 Essential 10 checklist",
+    "description": "For animal studies (ANIMAL regex, reporting.py:192), report the status of each ARRIVE Essential 10 item: study design, sample size justification, inclusion/exclusion, randomisation, blinding, outcome measures, statistics, animal details (species, strain, sex, age), procedures, results. Show quotes and pages. Render it as a checklist panel, not as separate findings.",
+    "value": 5,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/reporting.py",
+     "web/src/PaperTab.tsx",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "reporting",
+    "title": "CONSORT checklist for trials",
+    "description": "For RCTs, check for a CONSORT flow diagram, allocation concealment, a primary outcome definition, the sample size calculation, attrition by arm and the registration ID. The diagram can be detected as a 'chart' panel near the 'enrolled/allocated/analysed' text.",
+    "value": 5,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/reporting.py"
+    ]
+   },
+   {
+    "category": "reporting",
+    "title": "Verify trial registrations (ClinicalTrials.gov and ISRCTN)",
+    "description": "For the IDs REG_ID finds (reporting.py:197), fetch the registry record. Flag retrospective registration (registered after the study start), primary-outcome switching (COMPare-style diff with the paper), a planned versus achieved sample size gap, and a sponsor that differs from the paper.",
+    "value": 5,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/reporting.py",
+     "engine/paperinspector/history.py"
+    ]
+   },
+   {
+    "category": "reporting",
+    "title": "Checklists for other study designs",
+    "description": "Detect the study type (systematic review, observational, diagnostic accuracy, qPCR) and run the matching checklist: PRISMA, STROBE, STARD, MIQE or MDAR. Present it as a collapsible reporting scorecard.",
+    "value": 3,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/reporting.py",
+     "web/src/PaperTab.tsx"
+    ]
+   },
+   {
+    "category": "reporting",
+    "title": "Sex as a biological variable (SAGER)",
+    "description": "Flag animal or human studies that do not state the sex of subjects, or that use one sex without justification.",
+    "value": 2,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/reporting.py"
+    ]
+   },
+   {
+    "category": "reporting",
+    "title": "Image-processing disclosure",
+    "description": "Note when a paper has blots or micrographs but no statement on image acquisition or processing (software, adjustments applied to the whole image). Many journals require one.",
+    "value": 2,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/reporting.py"
+    ]
+   },
+   {
+    "category": "reporting",
+    "title": "Biological and technical replicate reporting",
+    "description": "Check that the number of independent experiments is stated for blots and micrographs ('representative of 3 independent experiments'). Flag 'representative' images with no replicate count.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/reporting.py"
+    ]
+   },
+   {
+    "category": "reporting",
+    "title": "Sample size justification and power",
+    "description": "Note when there is no a priori power or sample-size justification in experimental papers. Flag post-hoc 'observed power' as a statistical error.",
+    "value": 2,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/reporting.py"
+    ]
+   },
+   {
+    "category": "reporting",
+    "title": "Specific statement checks instead of keyword presence",
+    "description": "STATEMENTS (reporting.py:185) passes if a single keyword appears anywhere: 'acknowledg' counts as a funding statement, and any 'approved by' counts as ethics. Require section headings or statement-shaped sentences, and quote the matching sentence so a reviewer can verify it.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/reporting.py"
+    ]
+   },
+   {
+    "category": "corpus",
+    "title": "Persistent local fingerprint index across all scans",
+    "description": "Store panel keypoint descriptors, dhash, table column hashes and text shingles from every scan in a local SQLite and FAISS index, under HOME/index. Every new scan then also queries all previous scans, as the Proofig and ImageTwin corpora do. Today scan_case (pipeline.py:446) only compares PDFs uploaded together.",
+    "value": 5,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/imgdup.py"
+    ]
+   },
+   {
+    "category": "corpus",
+    "title": "Sweep an author's or lab's papers",
+    "description": "Given a DOI or ORCID, fetch the open-access PDFs of the first and last authors' other papers (OpenAlex plus fetch.py) and run cross-paper image, table and text reuse automatically. This automates the 'pull the thread' workflow integrity sleuths use.",
+    "value": 5,
+    "effort": 4,
+    "files": [
+     "engine/paperinspector/fetch.py",
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/history.py",
+     "web/src/App.tsx"
+    ]
+   },
+   {
+    "category": "corpus",
+    "title": "Batch DOI queue with a ranking dashboard",
+    "description": "Accept a CSV or pasted list of DOIs, a journal ISSN plus date range (Crossref), or a special-issue page. Queue the scans and show a sortable table of score, top signals and status. Editors and sleuths work in batches.",
+    "value": 5,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/server.py",
+     "engine/paperinspector/cli.py",
+     "web/src/App.tsx"
+    ]
+   },
+   {
+    "category": "corpus",
+    "title": "Full screening in case mode",
+    "description": "scan_case (pipeline.py:446) only compares images, skips OCR text masks (_add_ocr_masks) and ignores supplements. Add OCR masks, cross-paper table and data duplication, methods text overlap and shared reagents or primers. Also link each paper's own within-paper scan.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/pipeline.py"
+    ]
+   },
+   {
+    "category": "corpus",
+    "title": "Network graph of related papers",
+    "description": "Visualise papers as nodes linked by shared images, shared text, shared authors and shared odd reagents. Clusters reveal paper-mill families. Use a force-directed graph in the web app.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "web/src/RunView.tsx",
+     "engine/paperinspector/pipeline.py"
+    ]
+   },
+   {
+    "category": "corpus",
+    "title": "Search for similar figures in PMC open access",
+    "description": "Optionally search the PMC OA figure set with image embeddings (CLIP or DINOv2) for near-duplicates of each panel. This finds reuse across unrelated groups (image theft, mills). It could ship as a downloadable index or a remote service, opt-in.",
+    "value": 4,
+    "effort": 5,
+    "files": [
+     "engine/paperinspector/imgdup.py",
+     "engine/paperinspector/settings.py"
+    ]
+   },
+   {
+    "category": "corpus",
+    "title": "Data fingerprints across papers",
+    "description": "Hash normalised numeric columns from supplements across the corpus index, and flag the same data series appearing in different papers as different experiments.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/datacheck.py",
+     "engine/paperinspector/pipeline.py"
+    ]
+   },
+   {
+    "category": "corpus",
+    "title": "Reagent and sequence reuse across papers",
+    "description": "Index primers, siRNA sequences, antibody catalogue numbers and ethics IDs across scanned papers. Identical odd reagents, especially wrong ones, shared by unrelated groups fingerprint a paper mill.",
+    "value": 3,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/textcheck.py",
+     "engine/paperinspector/pipeline.py"
+    ]
+   },
+   {
+    "category": "evidence",
+    "title": "Bik-style annotated whole-figure evidence",
+    "description": "Draw matched duplicate regions as same-coloured boxes on the full figure, the way Bik and PubPeer posts present them, and on a single composite image when a pair spans figures. evidence.side_by_side (evidence.py:35) only shows two crops.",
+    "value": 5,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/evidence.py",
+     "engine/paperinspector/pipeline.py"
+    ]
+   },
+   {
+    "category": "evidence",
+    "title": "Reviewer triage with saved rulings",
+    "description": "Let the user mark each finding confirmed, dismissed or uncertain and add a note. Save this in report.json (or a sidecar), recompute an adjusted score, and carry the rulings into the PubPeer and HTML exports. Score already has an 'adjusted' prop (RunView.tsx:405), but it is only used for AI verdicts.",
+    "value": 5,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/server.py",
+     "engine/paperinspector/report.py",
+     "web/src/RunView.tsx",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "evidence",
+    "title": "Letter-to-editor and COPE-style report",
+    "description": "Add an export formatted for journal integrity offices: a summary table, evidence images, the questions for the authors (from ASK, report.py:15), the methods used and their limits, and neutral wording that follows COPE guidance. Offer PDF and DOCX as well as HTML.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/report.py",
+     "engine/paperinspector/server.py"
+    ]
+   },
+   {
+    "category": "evidence",
+    "title": "Questions to the authors for every check",
+    "description": "ASK (report.py:15) only covers 9 image and stats checks. Add an author question for every check id, including data, refs and reporting, so the PubPeer and editor text never falls back to generic wording.",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/report.py"
+    ]
+   },
+   {
+    "category": "evidence",
+    "title": "Provenance manifest and evidence bundle",
+    "description": "Write a manifest with SHA-256 of the source PDF and supplements, engine version, detector parameters, timestamps and the URLs fetched. Offer a zip export (report, evidence, manifest) so findings can be reproduced and handed to an integrity office with chain of custody.",
+    "value": 4,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/server.py"
+    ]
+   },
+   {
+    "category": "evidence",
+    "title": "Calibrate confidence on the real-case benchmark",
+    "description": "Use tools/real_eval.py and tools/real_cases_truth.json to fit per-check calibration (isotonic or Platt) so confidence means something. Publish per-check precision and recall in the docs and show them in each finding's info popover.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "tools/real_eval.py",
+     "engine/paperinspector/models.py",
+     "docs"
+    ]
+   },
+   {
+    "category": "evidence",
+    "title": "Explain each check in the app",
+    "description": "For each check id, add a short 'what it detects / common innocent causes / what to ask' card with references (Bik 2016, statcheck, GRIM, Cabanac 2021), linked from every finding in the web and Mac apps.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/models.py",
+     "web/src/RunView.tsx",
+     "mac/Sources/PaperInspector/RunView.swift",
+     "docs"
+    ]
+   },
+   {
+    "category": "evidence",
+    "title": "Show both an integrity score and a quality score",
+    "description": "Keep the integrity risk score (models.py:149) and add a separate quality and reporting completeness score with its own breakdown. Users currently see quality notes but nothing summarises them.",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/models.py",
+     "engine/paperinspector/pipeline.py",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "ui",
+    "title": "Side-by-side viewer with synced zoom and a loupe",
+    "description": "Replace the fixed VIEWS modes (RunView.tsx:6) with continuous gamma, levels and contrast sliders, synchronised zoom and pan for paired panels, and a magnifier loupe. This is how sleuths verify duplicates by eye. Apply the same to BlinkView.swift.",
+    "value": 5,
+    "effort": 2,
+    "files": [
+     "web/src/RunView.tsx",
+     "web/src/Blink.tsx",
+     "mac/Sources/PaperInspector/BlinkView.swift"
+    ]
+   },
+   {
+    "category": "ui",
+    "title": "Keyboard triage in the web app",
+    "description": "Add j/k to move between findings, c/d/u to rule confirmed, dismissed or uncertain, f to open the figure, b to blink and / to search, with a shortcut overlay on '?'. The Mac app already uses space for blink (BlinkView.swift:42).",
+    "value": 4,
+    "effort": 1,
+    "files": [
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "ui",
+    "title": "Figure page overlay with every finding",
+    "description": "In the Figures tab, overlay all finding boxes at once, colour-coded by severity. Hovering one box highlights its partner and the finding row; clicking opens the Inspector.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "web/src/RunView.tsx",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "ui",
+    "title": "Mac app parity: settings, online toggle and AI investigator",
+    "description": "The Mac app has no settings UI, no 'check references online' toggle (App.swift:212 only has compare) and no AI investigator button, though Engine.investigate exists (Engine.swift:112). Add a Settings scene, the toggle and an Investigate toolbar item.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "mac/Sources/PaperInspector/App.swift",
+     "mac/Sources/PaperInspector/RunView.swift",
+     "mac/Sources/PaperInspector/Engine.swift"
+    ]
+   },
+   {
+    "category": "ui",
+    "title": "History search, filters and tags",
+    "description": "On the home list (App.tsx:161), add search by title, DOI or author, filters by score band and date, user tags, sorting, and CSV export of all runs. Scans pile up quickly in batch use.",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "web/src/App.tsx",
+     "engine/paperinspector/pipeline.py",
+     "mac/Sources/PaperInspector/App.swift"
+    ]
+   },
+   {
+    "category": "ui",
+    "title": "Live stage timeline during a scan",
+    "description": "Show each pipeline stage (fetch, figures, OCR, image matching, data, refs, record) with its own status and timing, plus what was fetched (supplement count, PMC/PLOS source). The current single progress string makes long DOI fetches feel stuck.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/server.py",
+     "web/src/App.tsx"
+    ]
+   },
+   {
+    "category": "ui",
+    "title": "Compare panels from different runs",
+    "description": "Allow manual comparison of a panel from run A with a panel from run B (server compare at server.py:203 is limited to one run). Useful when a sleuth suspects reuse in a paper scanned earlier.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/server.py",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "ui",
+    "title": "Difference heatmap with a threshold slider",
+    "description": "Expose evidence.difference (evidence.py:84) as an interactive heatmap with a threshold slider and a pixel-percentage readout. This shows exactly which pixels differ between two aligned duplicates (Category III edits).",
+    "value": 4,
+    "effort": 1,
+    "files": [
+     "web/src/Blink.tsx",
+     "engine/paperinspector/server.py"
+    ]
+   },
+   {
+    "category": "ui",
+    "title": "Supplement explorer",
+    "description": "Add a tab listing every fetched supplement with its type, size and origin, an inline table viewer that highlights the cells data findings point to, and image previews. Data findings currently cite cells the user cannot open in the app.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "web/src/PaperTab.tsx",
+     "web/src/RunView.tsx",
+     "engine/paperinspector/server.py"
+    ]
+   },
+   {
+    "category": "ui",
+    "title": "Text findings shown on the PDF page",
+    "description": "Render the PDF page with the quoted text highlighted for stats, text and reporting findings, using Location.page and the quote. Users can then verify GRIM or statcheck hits in context.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/server.py",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "agent",
+    "title": "Analysis tools for the AI investigator",
+    "description": "Agent TOOLS (agent.py:39) are view/search only. Add run_grim, recompute_test, lookup_reference (Crossref/OpenAlex), check_cell_line, crop_and_enhance (region plus mode), and get_table_cells. The model could then verify statistics and records instead of only looking at images.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/agent.py"
+    ]
+   },
+   {
+    "category": "agent",
+    "title": "AI investigator with a rubric and two-model consensus",
+    "description": "Require the agent to rule on each finding against a per-check rubric that cites evidence ids. Optionally run a second model and show agreement, so that only consensus false positives are dimmed.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/agent.py",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "agent",
+    "title": "Agent drafts a neutral PubPeer post",
+    "description": "Have the agent turn the confirmed findings into neutral, evidence-first PubPeer text with figure references, avoiding accusations. Pass it through a tone checker.",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/agent.py",
+     "engine/paperinspector/report.py"
+    ]
+   },
+   {
+    "category": "infra",
+    "title": "Planted-manipulation tests for every detector",
+    "description": "For each new detector, add a planted case in synth.py, alongside the existing Plant entries at synth.py:333, and a negative control. Assert the expected findings and severities in tests. Extend tools/bench.py to report per-check precision and recall on synthetic and real cases.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/synth.py",
+     "tests/test_engine.py",
+     "tools/bench.py"
+    ]
+   },
+   {
+    "category": "infra",
+    "title": "Cache HTTP responses and respect rate limits",
+    "description": "Cache Crossref, OpenAlex, NCBI and ICLAC responses on disk with a TTL, use a single polite client with retry and backoff, and report rate-limit notes in the UI. history.py hard-codes sleep(0.34) (history.py:153), and refcheck uses single-thread executors.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/refcheck.py",
+     "engine/paperinspector/history.py",
+     "engine/paperinspector/fetch.py"
+    ]
+   },
+   {
+    "category": "infra",
+    "title": "More ways to fetch full text",
+    "description": "Add Europe PMC full-text XML for non-PMC OA papers, Unpaywall best_oa_location, the Springer, Elsevier and Wiley TDM APIs (with the user's keys from Settings), and arXiv. Report which source supplied each file. Fetch failures are the main reason scans return few figures.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/fetch.py",
+     "engine/paperinspector/settings.py"
+    ]
+   }
+  ]
+ }
+}

@@ -1,0 +1,223 @@
+{
+ "key": "tests",
+ "res": {
+  "findings": [
+   {
+    "file": "engine/paperinspector/imgdup.py",
+    "line": 95,
+    "severity": "high",
+    "title": "features() keeps panels whose keypoints are all text-masked; candidates() then segfaults the whole process",
+    "detail": "The MIN_KP check (line 95) runs before the text-mask filter (lines 98-104), so a panel whose keypoints all fall under text_mask returns a Feat with 0 descriptors. When every Feat is empty, cv2.flann_Index on an empty base (lines 112-114) crashes with SIGSEGV (verified: exit 139). That is a native crash, not a Python exception, so the job's try/except in server._job cannot catch it and the whole API server dies. No test covers text masks in imgdup.",
+    "failure_scenario": "Two micrograph panels with text_mask=np.ones(...). imgdup.features() returns Feat(kp=0) and imgdup.find([f,g]) kills the interpreter (exit 139).",
+    "fix": "Add tests/test_engine.py::test_fully_masked_panels_are_skipped. Build two synth.histology panels with text_mask all True, then assert imgdup.features(p) is None and imgdup.find([...]) == [] with no crash. Run it in a subprocess (subprocess.run([sys.executable, '-c', ...]) and assert returncode == 0) so a segfault fails the test and does not abort pytest. Also add a case where only one of three panels is masked and assert the other two still match."
+   },
+   {
+    "file": "engine/paperinspector/sources.py",
+    "line": 134,
+    "severity": "high",
+    "title": "Figure IDs from JATS labels collide, which silently corrupts DOI-mode runs",
+    "detail": "_fig_id takes the first digit run of the label. When a JATS fig has no <label>, fetch._from_jats (fetch.py:376) passes p.stem. Verified: 'pone.0055487.g001' and 'pone.0055487.g002' both map to 'F0055487', and 'Figure 1A' and 'Figure 1B' both map to 'F1'. Duplicate figure IDs make pipeline._analyse overwrite figures/<id>.png (pipeline.py:357) and produce duplicate panel IDs. server._panel (server.py:165) then crops the first figure's box out of the second figure's image, and Feat keys collide in imgdup.find dedup. scan_doi (the headline path) has no test at all.",
+    "failure_scenario": "A PMC package with two unlabeled figures produces one figure PNG, panel IDs 'F0055487.a' twice, and evidence and blink frames drawn from the wrong figure.",
+    "fix": "Add tests/test_sources.py::test_jats_figure_ids_unique. Call sources.load(None, [], meta={'doi':'10.1/x'}, jats_figures=[(png1,'pone.0055487.g001',''),(png2,'pone.0055487.g002',''),(png3,'Figure 1A',''),(png4,'Figure 1B','')]) using synth images written to tmp_path. Assert len({f.id for f in src.paper.figures}) == 4. Add a report-level invariant test that every figure id and every panel id in report.json is unique, and run it on the demo run and on the DOI fixture."
+   },
+   {
+    "file": "engine/paperinspector/sources.py",
+    "line": 188,
+    "severity": "high",
+    "title": "Archives with more than 26 members reuse figure prefixes (S1a ... S1z, then S1a again)",
+    "detail": "Members are labelled f\"{prefix}{chr(97 + k % 26)}\" for k < 30, so members 27-30 reuse S1a-S1d. Supplementary zips of raw or uncropped blot images often hold 30 or more TIFFs. Duplicate figure IDs lead to overwritten figure PNGs, duplicate panel IDs and wrong compare/evidence crops. _unpack (line 205) also flattens paths, so a/blot.tif and b/blot.tif overwrite each other. No test unpacks an archive.",
+    "failure_scenario": "An upload of raw_blots.zip with 30 PNGs gives figures S1a..S1z, then S1a..S1d again. report.json has 4 duplicate figure IDs and the panel crops served for S1a come from the wrong image.",
+    "fix": "Add tests/test_sources.py::test_zip_supplement_ids_unique_and_no_overwrite. Write a zip in tmp_path with 30 distinct synth images plus two same-named files in different folders (a/x.png, b/x.png). Call sources.load(None, [(zip,'S1.zip','upload')]) and assert 32 figures with unique IDs and that both x.png images are present (compare pixel hashes). Also assert that '__MACOSX/' entries and files over the size limit are skipped."
+   },
+   {
+    "file": "engine/paperinspector/stats.py",
+    "line": 129,
+    "severity": "high",
+    "title": "GRIM uses Python banker's rounding and flags valid half-up means (integrity false positive)",
+    "detail": "possible = any(abs(round(k / n, d) - mean) < 1e-9 ...). round(2.125, 2) == 2.12, so a mean of 17/8 correctly reported as 2.13 (half-up) is flagged as impossible. Verified: stats.grim('mean number of lesions per mouse was 2.13 (n = 8)') returns a hit, and so does 2.63. stats.grim is in INTEGRITY, so this raises the risk score. The test only covers 2.47 and 2.50.",
+    "failure_scenario": "An honest paper reports 2.13 (n = 8) or 0.38 (n = 8) and gets a medium 'Means that are impossible for the sample size' integrity finding plus a higher score.",
+    "fix": "Extend tests/test_engine.py::test_grim_percent_repeated with a parametrized test_grim_accepts_half_up_and_half_even. For n in (4, 8, 16) and every k in range(0, 5*n), format k/n with Decimal ROUND_HALF_UP and with ROUND_HALF_EVEN to 2 dp, embed each in 'The mean number of lesions per mouse was {m} (n = {n}).', and assert stats.grim(...) == []. Keep 2.47 (n = 8) as the positive control."
+   },
+   {
+    "file": "tools/bench.py",
+    "line": 65,
+    "severity": "high",
+    "title": "Splice detection fails end to end (bench 0/4); the only unit test uses an easy +10-grey-level splice",
+    "detail": "test_flat_patch_and_seam (tests/test_engine.py:80) splices a blot onto synth.adjust(blot, 0.85, 10), which is a large brightness jump. Same-exposure splices like the ones bench.make builds (lines 65-71) are mostly missed. Verified: forensics.seams finds 1 of 5 raw seeds and 0 after the PDF round trip (pipeline output has no image.splice for F1.d). bench_results.json records splice 0/4 and paint 4/8, but no test asserts pipeline-level splice recall, so the feature can regress to zero unnoticed.",
+    "failure_scenario": "A real lane splice between two gels at similar exposure produces no image.splice finding, and CI stays green.",
+    "fix": "Add tests/test_engine.py::test_splice_found_after_pdf_roundtrip. Build a FigureSpec with synth.splice_lanes(blot(lanes=6, lane_w=42), blot(...), 42, 3) (no adjust), write it with synth.to_pdf_file, run pipeline.scan into a tmp PAPERINSPECTOR_HOME, and assert an image.splice finding located on the spliced panel. Parametrize over 5 seeds and require at least 3 of 5. Add an honest 6-lane blot with a drawn black divider line and assert it is NOT flagged, which pins the 'marked' suppression at pipeline.py:272."
+   },
+   {
+    "file": "engine/paperinspector/fetch.py",
+    "line": 159,
+    "severity": "high",
+    "title": "fetch.py (DOI resolution, PMC/EPMC/PLOS/bioRxiv/landing-page harvesting) has zero tests",
+    "detail": "The headline 'paste a DOI' path is untested. Specific untested risks: normalize() rejects URL-encoded DOIs ('https://doi.org/10.1371%2Fjournal.pone.0055487' raises ValueError, verified) and strips a closing ')' that belongs to the DOI ('10.1000/ABC(1)' becomes '10.1000/abc(1', verified). _date formats with :02d and would crash on string date-parts. _authors falls back to OpenAlex when Crossref has none. _abstract rebuilds the inverted index. _unzip enforces MAX_SUPP per zip, not per bundle, and decides on the declared file_size before z.read. _plos loops up to 40 supplement requests if the server returns 200 HTML. _landing applies SUPP_WORDS filtering. A second fetch of the same DOI reuses the cache dir and can append duplicate figures and supplements.",
+    "failure_scenario": "A user pastes a DOI copied from a browser address bar (percent-encoded) and gets a 400. A PLOS page returns 200 HTML for missing s0xx files and 40 junk 'supplements' are downloaded and analysed.",
+    "fix": "Add tests/test_fetch.py using httpx.MockTransport. Monkeypatch fetch._Client.__init__ to build httpx.Client(transport=MockTransport(handler)) and serve canned Crossref, OpenAlex, PMC S3 listing and manifest, JATS XML, PDF bytes, and a landing page with citation_pdf_url and supplement links. Assert: (1) normalize cases, URL-encoded, 'doi:' prefix, trailing '.', and balanced trailing ')'; (2) Bundle.pdf, xml, figures (labels and captions) and supplements match the fixture; (3) a zip with 60 members yields at most MAX_SUPP total; (4) a PLOS handler returning 200 text/html stops after the first non-file; (5) calling fetch() twice yields no duplicate entries; (6) every network failure (500, timeout) logs a line and does not raise."
+   },
+   {
+    "file": "engine/paperinspector/pipeline.py",
+    "line": 333,
+    "severity": "high",
+    "title": "scan_doi / _analyse with meta, XML, JATS figures and supplements is never exercised",
+    "detail": "test_app only runs the /api/demo upload path (scan with an xlsx). Never tested: the no-PDF branch (sources.load main=None, which builds the paper from _jats_text); JATS figures replacing PDF figures; meta['printed_refs'] injection; read_jats_tables; reporting.record() with notices; the online=True branch calling refcheck and history; the 'meta' block in report.json; and log propagation.",
+    "failure_scenario": "A refactor of sources.load breaks the main=None path, and every closed-access DOI scan crashes or reports zero figures without any test failing.",
+    "fix": "Add tests/test_doi_pipeline.py::test_scan_doi_offline. Monkeypatch pipeline.fetch.fetch to return a Bundle built in tmp_path: no pdf, a JATS XML with 2 <fig> (labels Fig 1, Fig 2), one <table-wrap>, 12 <ref>, and two synth figure PNGs where Fig 2 panel b duplicates Fig 1 panel a, plus a demo_supplement xlsx and meta with a retraction notice. Monkeypatch refcheck.analyse and history.check to return ([], {}). Assert: report['meta']['doi'] is set; the figures are F1 and F2; the cross-figure image.duplicate is found; record.retracted is critical; data.random_formula is present; report['sources'][0]['status'] starts with 'analysed (figures from'; and report.json round-trips through json.loads."
+   },
+   {
+    "file": "engine/paperinspector/pipeline.py",
+    "line": 98,
+    "severity": "medium",
+    "title": "Supplementary-figure detection is inconsistent: 'F2-2' is downgraded as supplementary, 'FS1' is not",
+    "detail": "_match_finding treats any figure ID containing '-' as supplementary (line 98) and lowers severity one step. pdfdoc._name_figures (pdfdoc.py:230) names the second placement of a main figure 'F2-2', so main-text duplicates get downgraded. In-PDF supplementary figures captioned 'Figure S1' become 'FS1', which neither this check nor clone's figure_id.startswith('S') (line 253) recognises, so they are not downgraded. The n_main count (line 388) also counts FS* as main figures.",
+    "failure_scenario": "A mirrored copy between F2.a and F2-2.c (one figure split over two image groups) is reported high instead of critical, while FS3 montage clones keep critical severity.",
+    "fix": "Add tests/test_pipeline_unit.py::test_supplementary_downgrade_rules. Build imgdup.Match objects directly (or via _match on synth images) with panel IDs 'F2.a'/'F2-2.c', 'FS1.a'/'FS1.b', 'S1-F1.a'/'F1.b' and '1_F2.a'/'2_F3.b' (case). Assert the severity for each against an explicit table of intended behaviour, and assert the same rule for image.clone severity on figure_id 'FS1' versus 'S1-F1'."
+   },
+   {
+    "file": "engine/paperinspector/models.py",
+    "line": 131,
+    "severity": "medium",
+    "title": "INTEGRITY set lists check IDs no detector emits, and an emitted fabrication signal is unscored",
+    "detail": "INTEGRITY includes data.duplicate_column, data.copied_across_files, refs.nonexistent and stats.pcurve, which nothing emits (grep), while refcheck emits refs.bad_doi (refcheck.py:167) for non-existent DOIs, which is therefore a quality note that never affects the score. Rename drift like this is invisible without a registry test. Web api.ts and Models.swift have names for every emitted ID but not for the phantom ones.",
+    "failure_scenario": "A paper with 5 fabricated DOIs scores 0 because refs.bad_doi is 'quality', and the README's 'integrity signals set the score' is wrong for it.",
+    "fix": "Add tests/test_registry.py::test_check_ids_consistent. Collect emitted IDs by regex over engine/paperinspector/*.py (Finding(\"x.y\"... and f\"report.missing_{key}\" expansions), assert models.INTEGRITY is a subset of the emitted set, assert every emitted ID appears in web/src/api.ts and mac/Sources/PaperInspector/Models.swift checkNames, and assert an explicit expected-kind table (e.g. refs.bad_doi -> integrity or a deliberate quality) so any reclassification needs a test change."
+   },
+   {
+    "file": "engine/paperinspector/datacheck.py",
+    "line": 442,
+    "severity": "medium",
+    "title": "data.generator_digits can never fire: values are normalised to 10 significant digits first",
+    "detail": "Col.raw is built with _norm (lines 59-64, format(v, '.10g')), so _sig_digits(r) is at most 10 and the >= 13 test at line 442 is never true (verified: format(0.1234567890123456, '.10g') == '0.123456789'). The detector is dead code. Untested detectors in the same module: _digits (terminal_digits and digit_preference), _repeats, _impossible, _sort_anomaly, _duplicate_columns/derived_column.",
+    "failure_scenario": "A supplement whose 'measurements' are pasted RAND() output with 16 digits produces no finding, and nobody notices because no test plants it.",
+    "fix": "Add tests/test_data.py::test_generator_digits_found. Write a CSV with 40 values str(rng.random()) (16-17 digits) under a header 'Weight', assert 'data.generator_digits' in the checks, and assert that a formula column (C2 '=A2*2') is excluded. Add one positive and one honest-negative test each for data.terminal_digits (60 values whose last digits are 3/7 only), data.digit_preference, data.repeated_values, data.impossible ('% viable' with 130 and -2), data.sort_anomaly (IDs 1..40 with two rows swapped) and data.derived_column (B = A*2.54)."
+   },
+   {
+    "file": "engine/paperinspector/pipeline.py",
+    "line": 35,
+    "severity": "medium",
+    "title": "Run IDs collide for same-file scans in the same second; concurrent jobs share global SIFT state",
+    "detail": "run_id_for = strftime('%Y%m%d-%H%M%S') + sha1(file)[:8], and _new_run (line 311) rmtree's an existing folder. A double-clicked Scan or Demo (the demo PDF bytes are deterministic) deletes the first job's run folder mid-scan. scan_case (line 455) uses mkdir without exist_ok and raises FileExistsError on a re-run in the same second. The server runs jobs on threads that share imgdup._sift and clone._det detector singletons and the unbounded _COMPARE cache; there is no concurrency test.",
+    "failure_scenario": "Two POST /api/demo calls within one second: job 1 fails with FileNotFoundError writing evidence, or both jobs report the same run ID and one report is missing.",
+    "fix": "Add tests/test_app.py::test_concurrent_identical_scans. Fire two client.post('/api/demo') back to back, poll both, and assert both reach 'done' with distinct run IDs whose report.json loads and has identical finding check sets. Add test_case_rerun_same_second, which calls pipeline.scan_case on the same two PDFs twice in a row and expects no exception."
+   },
+   {
+    "file": "engine/paperinspector/server.py",
+    "line": 83,
+    "severity": "medium",
+    "title": "Most HTTP endpoints are untested: multipart scan, image upload, failed jobs, delete, case, investigate, CORS/origin",
+    "detail": "test_app covers /api/demo, the panel view, compare, pubpeer, report.html, list, settings and one traversal string. Untested: POST /api/scan multipart with supplements and online=1; an image-only upload (pipeline.scan with .png: main_pdf None, sources.load image path); a corrupt PDF giving job status 'error' (and the half-written run folder it leaves behind); DELETE /api/runs/{id}; POST /api/case with fewer than 2 files (400) and with 2 or more; /compare/{which} with an invalid which; /figures/{fid}/view.png; /supplements/{name} and /source; /api/doi validation (400 on non-DOI). CORS only allows the Vite origin, but simple cross-origin POSTs (/api/demo, /api/runs/{id}/investigate) need no preflight, and Host is never checked (DNS rebinding). _COMPARE (line 199) grows without bound.",
+    "failure_scenario": "A refactor breaks multipart parsing of supplements (the Mac and web apps' real upload path), or a malicious page triggers paid AI investigations, and no test fails.",
+    "fix": "Add tests/test_server.py with: test_multipart_scan_with_supplement (upload demo PDF and xlsx via files=[('file',...),('supplements',...)], expect data.random_formula); test_image_upload (PNG with a cloned region, expect image.clone); test_corrupt_pdf_job_errors (b'not a pdf' gives status 'error' and list_runs excludes it); test_delete_run (200, then 404 on GET); test_case_requires_two (400); test_bad_doi_400; test_compare_bad_which_404; test_cross_origin_post_rejected (POST /api/demo with Origin: https://evil.example must be 403 once an Origin/Host check is added, so mark it xfail until then); test_compare_cache_bounded (100 distinct pairs keep len(server._COMPARE) <= cap)."
+   },
+   {
+    "file": "engine/paperinspector/agent.py",
+    "line": 279,
+    "severity": "medium",
+    "title": "AI investigator has no tests; the OpenAI path does not guard malformed tool args or tool errors",
+    "detail": "_openai calls json.loads(c.function.arguments) and run_tool without try/except (lines 279-282), unlike _anthropic (lines 241-246). One malformed tool call from a local Ollama model aborts the whole investigation. Also untested: run_tool for all 7 tools against a real run, verdict merge, score_ai excluding false_positive, report.pubpeer preferring ai_review.pubpeer, the missing-key error, and Workspace.text being empty for DOI runs without a PDF (search_text always returns 'Not found.').",
+    "failure_scenario": "An Ollama model emits arguments '{panel_id: F1.a}' (invalid JSON), the job ends in error, and the user loses the run's AI review.",
+    "fix": "Add tests/test_agent.py. (1) test_run_tool_all_tools runs each tool on the demo run and asserts text and image blocks, with 'No such ...' for bad IDs and the 'mode' enum respected. (2) test_investigate_with_fake_anthropic monkeypatches anthropic.Anthropic with a scripted client: turn 1 calls list_findings, turn 2 calls submit_review marking finding '001' false_positive. Assert f['ai'] is merged, score_ai < score, and pubpeer() returns the AI draft. (3) test_openai_malformed_args uses a fake OpenAI client whose first tool call has arguments 'not json'; expect the loop to continue (after the fix) rather than raise."
+   },
+   {
+    "file": "engine/paperinspector/refcheck.py",
+    "line": 104,
+    "severity": "medium",
+    "title": "Online reference and history checks (refcheck.analyse, history.check, refs.retractions) are untested",
+    "detail": "These checks emit refs.bad_doi, unverified, retracted, self_citation, citation_pushing, journal_self, off_topic, refs.sneaked, record.duplicate_title, author_retractions and report.accession_missing, and none has a test. Logic worth pinning: doi_exists treats Crossref non-200 plus a doi.org redirect as existing and network errors as existing; self-citation name matching uses (family, first initial), which over-matches common names; 429 handling records notes; _sneaked skips when the PDF reference list is incomplete; and _accessions sleeps 0.34 s per accession.",
+    "failure_scenario": "An OpenAlex schema change ('authorships' to 'authors') silently zeroes the self-citation stats, or a doi.org 5xx turns every DOI into 'does not exist'.",
+    "fix": "Add tests/test_refcheck.py. Use respx or httpx.MockTransport (patch refcheck._client and history's httpx.Client) to serve 10 OpenAlex works, 6 of which share an author ID with meta['authors'], 1 is_retracted, and 5 in an unrelated field. Have Crossref return 404 and doi.org 404 for one DOI. Assert the exact set of check IDs and stats (self_citation_rate=0.6, bad_dois=[that DOI]). Add a case where every request raises httpx.ConnectError and assert no findings and no exception. For history, assert refs.sneaked when reference_count=40 and printed_refs=25, and assert it is not raised when printed is below 10."
+   },
+   {
+    "file": "engine/paperinspector/imgutil.py",
+    "line": 96,
+    "severity": "medium",
+    "title": "Results depend on whether tesseract is installed; the tests and bench do not pin it",
+    "detail": "pipeline._image_findings (pipeline.py:200) masks OCR'd text and reclassifies panels as text or chart (lines 201-207) only when tesseract is on PATH or in /opt/homebrew. The same PDF therefore gives different panel kinds, clone, flat and duplicate findings, and bench recall and false-alarm numbers on CI versus a Mac with Homebrew. No test runs either mode explicitly.",
+    "failure_scenario": "The bench passes locally with tesseract, while CI (or a user without tesseract) gets clone false alarms on panels with printed labels that the README says are suppressed.",
+    "fix": "Add tests/test_app.py::test_demo_without_ocr and ::test_demo_with_ocr. Monkeypatch shutil.which to return None in imgutil (and os.path.exists for the Homebrew path), run the demo scan, and assert the same planted set as test_demo_finds_every_plant. Mark the with-OCR variant skipif(shutil.which('tesseract') is None). Add a clone-check test that draws repeated text labels ('50 \u03bcm' x4) into a micrograph and expects no image.clone with OCR on. Make bench.py record 'ocr': bool in its JSON output."
+   },
+   {
+    "file": "tools/bench.py",
+    "line": 158,
+    "severity": "medium",
+    "title": "Benchmarks are not regression gates: no thresholds, baseline gitignored, image checks only",
+    "detail": "bench.py prints recall and false-alarm rates but asserts nothing, and bench_results.json is in .gitignore, so there is no stored baseline to compare against. real_cases.py/real_eval.py need live network access to 30 DOIs and have no cached fixtures, so they cannot run in CI. real_eval.fig_numbers (real_eval.py:23) cannot parse 'P3.1' or 'S1-F2' figure IDs, so hits on uncaptioned figures are never credited. No benchmark measures false-positive rates of the text, stats or data detectors on honest documents, even though they feed the score.",
+    "failure_scenario": "A threshold tweak in imgdup drops mirror recall from 100% to 60%, or doubles control false alarms, and nothing fails.",
+    "fix": "Commit tools/bench_baseline.json (by_manip recall and control_false). Add tests/test_bench.py::test_image_bench_no_regression (marker 'slow'), which runs bench.run_one over a fixed seed set (n=1 per cell, about 60 papers). Assert per-manipulation recall >= baseline - 0.15, overall recall >= baseline - 0.05 and control false-alarm <= baseline + 0.05. Add test_honest_text_corpus_quiet, which runs stats.check, textcheck.check, refs.check and reporting.statements on 3-5 cached open-access honest paper texts (stored as .txt fixtures) and asserts no integrity finding. In real_eval, extend fig_numbers to map P<page> IDs through report['figures'][].page."
+   },
+   {
+    "file": "engine/paperinspector/models.py",
+    "line": 149,
+    "severity": "medium",
+    "title": "risk_score and verdict properties are only checked as 'demo >= 70'",
+    "detail": "The score is the product's headline number and real_cases separation depends on it. Unpinned properties: quality-only findings give 0; repeats of one check are damped (1 + 0.6n); ten low findings of one check stay below one critical; dict and Finding inputs score the same; an unknown severity raises ValueError (SEVERITIES.index); verdict thresholds at 15, 40 and 70 and the 'critical forces Serious' rule.",
+    "failure_scenario": "Someone changes SEVERITY_WEIGHT or the 45.0 scale and every stored run's score shifts, the web color bands misalign, and no test fails.",
+    "fix": "Add tests/test_models.py::test_risk_score_properties with table-driven cases: [] gives 0; [quality high]*5 gives 0; one critical at conf 1.0 gives 59; 10 x image.flat low conf 0.6 < one critical; dict and Finding inputs are equal; monotone when adding any integrity finding. Add test_verdict_bands for scores 0, 14, 15, 39, 40, 69, 70 and for a critical finding with score 10."
+   },
+   {
+    "file": "engine/paperinspector/textcheck.py",
+    "line": 163,
+    "severity": "low",
+    "title": "Hidden-text check flags visible white labels on dark images; its non-injection branch is untested",
+    "detail": "Any span with color >= 245 is 'white text' regardless of what lies under it, so white vector scale-bar labels ('50 \u03bcm') over fluorescence micrographs count as hidden. Six or more words give a medium text.hidden_text note. Only the injection branch is tested (test_hidden_prompt_injection). Also untested: text.hidden_tags (Unicode tag decoding), text.invisible_chars (the >= 5 threshold and soft-hyphen exclusion), off-page and 1-pt text.",
+    "failure_scenario": "Every figure-heavy paper with white vector labels on micrographs gets 'Hidden text in the PDF'.",
+    "fix": "Add tests/test_engine.py::test_white_label_on_dark_image_not_hidden: insert a black image with page.insert_image, then 6 white '50 \u03bcm scale' strings over it, and assert hidden_text(path) == [] (xfail until the check samples the background). Add test_hidden_tags_decoded (text containing chr(0xE0000+ord(c)) for 'ignore' gives text.hidden_tags, critical, with data['decoded']=='ignore'), test_invisible_chars_threshold (4 ZWSP gives nothing, 5 gives a finding, 10 soft hyphens alone give nothing) and test_microscopic_text (1-pt text gives text.hidden_text)."
+   },
+   {
+    "file": "engine/paperinspector/stats.py",
+    "line": 176,
+    "severity": "low",
+    "title": "stats.impossible and recompute regexes have false-positive and miss cases that no test pins",
+    "detail": "IMPOSSIBLE_RE matches 'P = 3' (passage number, verified false positive). recompute misses 'r(28) = .45' because NUM requires a leading digit (verified). The z regex matches any 'z = ' token. Untested: F and z recompute positives, the &lt;/&gt; operators, the e-notation p tolerance (rep*0.05), and stats.impossible entirely.",
+    "failure_scenario": "'HeLa cells at P = 3' gives an 'Impossible p-values' note, and a wrong 'r(28) = .45, p = .80' goes undetected.",
+    "fix": "Add tests/test_engine.py::test_stats_edge_cases (parametrized). Expect hits for 'r(28) = .45, p = .80', 'z = 1.20, p < .001', 'F(1, 20) = 1.0, p &lt; .01' and 'p = 0.000'. Expect no hit for 'cells at passage P = 3', 'p = 1.0', 't(10) = 3.17, p = 1e-2' and 't(10) = 2.23, p = 0.05'."
+   },
+   {
+    "file": "engine/paperinspector/sources.py",
+    "line": 79,
+    "severity": "low",
+    "title": "Photoshop ICC-profile detection is dead code (slice [:0]); EXIF/metadata finding untested",
+    "detail": "(im.info.get('icc_profile') or b'')[:0] is always b'', so 'Profile': 'Photoshop' is never set. image.metadata (pipeline.py:391-398) is not tested either; nor are _read_image's 2400 px downscale or its PIL fallback for TIFFs that cv2 cannot read.",
+    "failure_scenario": "A supplementary TIFF saved by Photoshop with no Software EXIF tag produces no metadata note.",
+    "fix": "Add tests/test_sources.py::test_exif_software_and_profile: save a PNG/JPEG with PIL exif {0x0131: 'Adobe Photoshop 25.0'} and with an icc_profile containing b'Photoshop', run sources.load(None, [(p,'S1','upload')]), and assert sf.exif['Software'] and sf.exif.get('Profile') == 'Photoshop'. Run pipeline.scan on an image with supplements=[p] and assert an image.metadata finding. Add test_large_tiff_downscaled (5000 px wide gives a max side of 2400)."
+   },
+   {
+    "file": "engine/paperinspector/tables.py",
+    "line": 39,
+    "severity": "low",
+    "title": "Table readers and number parsing have edge cases with no tests",
+    "detail": "number('1,500') returns 1500 (European '1,500' meaning 1.5 is misread), while '1,5' returns None. _cell_str (line 71) calls int(v) and would raise on a NaN or inf float from xlrd. read_jats_tables ignores rowspan and crashes on a non-integer colspan. read_delimited parses any .txt (e.g. README.txt) as a table. read_docx and read_pdf_tables have no tests.",
+    "failure_scenario": "A Word supplement table with merged cells shifts columns, so duplicate-block checks compare misaligned data. A .xls with a #DIV/0 float NaN aborts that file ('not analysed: ValueError').",
+    "fix": "Add tests/test_tables.py: number() table (e.g. '\u22123.2' gives -3.2, '(12)' gives 12, '45%' gives 45, '1e-3', '1,234.5', '1.234,5' gives None); _cell_str(float('nan')) does not raise; read_jats_tables with colspan='2' and rowspan='2' keeps the column count consistent; read_docx on a python-docx-built file returns its table rows, text and an embedded PNG; read_pdf_tables on a synth PDF with a drawn 4x3 grid returns 1 table."
+   },
+   {
+    "file": "engine/paperinspector/reporting.py",
+    "line": 151,
+    "severity": "low",
+    "title": "Timeline, statements, consistency and record checks are only lightly tested",
+    "detail": "Only data_on_request, no_ethics and an ISO-ish fast acceptance are tested. Untested: the d/m/Y parse of US 'MM/DD/YYYY' dates (it can create or hide record.fast_acceptance, an integrity check); the 'Accepted before received' branch; meta-dates fallback; the journal-article type gate; record() for retraction, removal, expression_of_concern and corrections; report.no_registration with and without an NCT ID; report.figure_count; report.abstract_numbers; sem_small_n; ICLAC short-name matching ('KB' only next to 'cells').",
+    "failure_scenario": "'Received 03/04/2021 Accepted 03/10/2021' (US format, 6 days) is parsed as 3 April to 3 October and the fast-acceptance signal is lost, or the reverse case adds a false integrity hit.",
+    "fix": "Add tests/test_reporting.py with: test_record_notices (each notice type maps to the expected check and severity); test_timeline_meta_fallback_and_negative; test_timeline_ambiguous_slash_dates (assert the chosen behaviour explicitly, e.g. no finding when both D/M and M/D parse); test_trial_registration (an RCT without an NCT ID flags, with NCT01234567 does not); test_figure_count (text cites Figure 8 with n_figures=7); test_abstract_numbers; test_kb_requires_cell_context ('KB' in 'a 5 KB file' gives no hit)."
+   },
+   {
+    "file": "mac/Sources/PaperInspector/Models.swift",
+    "line": 113,
+    "severity": "low",
+    "title": "No contract test between report.json and the Swift and TypeScript decoders; no web or Swift tests at all",
+    "detail": "Swift Report, PaperInfo (non-optional title and doi), FigureInfo (page: Int, caption: String), SourceInfo (origin: String) and Notice (type: String) decode strictly. A single null or a missing key from the engine (e.g. a case report, an image upload with an empty meta, or a _json fallback that stringifies an unexpected numpy type) makes the whole run fail to open in the Mac app. The web has no type check against real output either. The repo has no XCTest target and no web test script.",
+    "failure_scenario": "An engine change sets paper.title to None for an untitled PDF, and the Mac app shows a decode error for every such run.",
+    "fix": "Add tests/test_contract.py, which writes golden report.json fixtures (demo scan, image scan, case scan, DOI fixture) to tests/fixtures/ and validates them against a JSON Schema derived from Models.swift and api.ts (required keys, non-null types). Add mac/Tests/PaperInspectorTests/DecodeTests.swift that JSONDecoder-decodes each fixture into Report and [RunSummary], and an npm 'test' script with a vitest test that type-checks the fixtures against the Report interface (e.g. via a zod schema)."
+   },
+   {
+    "file": "engine/paperinspector/report.py",
+    "line": 89,
+    "severity": "low",
+    "title": "HTML report escaping and PubPeer draft composition are only smoke-tested",
+    "detail": "test_api_views_and_compare only checks that report.html starts with '<!doctype html>' and that pubpeer contains 'raw' or 'original'. Untested: escaping of attacker-controlled strings (paper title from PDF metadata, file names, quotes, sheet names); exclusion of AI false_positive and info findings and record.* checks from the draft; preferring ai_review.pubpeer; the 'No issues' text; inlined evidence data URIs; cli._print and --json.",
+    "failure_scenario": "A PDF whose metadata title contains '<img src=x onerror=...>' yields script execution when the downloaded HTML report is opened, if someone removes an esc() call.",
+    "fix": "Add tests/test_report.py: build a run dir with report.json whose title, finding title, detail, quote, file and sheet all contain '<script>alert(1)</script>' and evidence names containing quotes. Assert '<script>' is absent from html_report(run) and that the escaped forms are present. Assert pubpeer() omits severity info, ai false_positive and record.retracted, includes a data.* medium, and returns ai_review.pubpeer when set. Add test_cli_scan_json, which runs cli.main(['scan', demo_pdf, '--json']) with capsys and parses the JSON."
+   }
+  ]
+ }
+}

@@ -1,0 +1,72 @@
+{
+ "note": "What each PLOS ONE retraction notice says was wrong. image: figure numbers the notice names; kind: what was found. Papers retracted for other reasons should score low on images.",
+ "10.1371/journal.pone.0055487": {
+  "image": [
+   "2",
+   "5",
+   "7"
+  ],
+  "kind": "duplicated western blot and other panels, within Fig 5 and 7 and between Fig 7 and Fig 2"
+ },
+ "10.1371/journal.pone.0065456": {
+  "image": [
+   "5"
+  ],
+  "kind": "vertical splice irregularities between blot lanes"
+ },
+ "10.1371/journal.pone.0089622": {
+  "image": [
+   "1"
+  ],
+  "kind": "similar lanes inside one western blot (P-gp, beta-actin)"
+ },
+ "10.1371/journal.pone.0104743": {
+  "image": [
+   "3",
+   "4"
+  ],
+  "kind": "splice discontinuities in Fig 3D; beta-actin of Fig 3D duplicates Fig 4B"
+ },
+ "10.1371/journal.pone.0100232": {
+  "image": [
+   "3",
+   "7"
+  ],
+  "kind": "7 pairs of same or overlapping images between Fig 3A and Fig 7A"
+ },
+ "10.1371/journal.pone.0112135": {
+  "image": [],
+  "kind": "ethics: organ sources (not an image problem)"
+ },
+ "10.1371/journal.pone.0083271": {
+  "image": [],
+  "kind": "methodological errors in Tables 3 and 4 (not an image problem)"
+ },
+ "10.1371/journal.pone.0240663": {
+  "image": [],
+  "kind": "peer-review manipulation (not an image problem)"
+ },
+ "10.1371/journal.pone.0079472": {
+  "image": [],
+  "kind": "experimental design and conclusions (not an image problem)"
+ },
+ "10.1371/journal.pone.0128753": {
+  "image": [],
+  "kind": "duplicated genotype samples (data, not images)"
+ },
+ "10.1371/journal.pone.0192790": {
+  "image": [
+   "1",
+   "3",
+   "4",
+   "5"
+  ],
+  "kind": "blots reused across conditions and papers; partially overlapping panels in Figs 3 and 4"
+ },
+ "10.1371/journal.pone.0062705": {
+  "image": [
+   "2"
+  ],
+  "kind": "bands duplicated (some horizontally flipped) and splice discontinuities in Fig 2"
+ }
+}

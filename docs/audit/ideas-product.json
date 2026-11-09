@@ -1,0 +1,1689 @@
+{
+ "key": "ideas-product",
+ "res": {
+  "ideas": [
+   {
+    "category": "verdict-tracking",
+    "title": "Human verdict per finding (confirmed / false positive / needs raw data / dismissed)",
+    "description": "Today only the AI can rule on a finding (Finding.ai in web/src/api.ts, VERDICT map in RunView.tsx:22). Add a reviewer verdict + note stored in runs/<id>/review.json (separate from report.json so a rescan or AI pass never clobbers it), exposed via PATCH /api/runs/{rid}/findings/{fid}/review, with verdict buttons in the Inspector pane and the Mac inspector.",
+    "value": 5,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/server.py",
+     "engine/paperinspector/pipeline.py",
+     "web/src/api.ts",
+     "web/src/RunView.tsx",
+     "mac/Sources/PaperInspector/Models.swift",
+     "mac/Sources/PaperInspector/RunView.swift",
+     "mac/Sources/PaperInspector/Engine.swift"
+    ]
+   },
+   {
+    "category": "verdict-tracking",
+    "title": "Stable finding fingerprints so verdicts survive rescans",
+    "description": "Finding ids are renumbered 001..n after sorting (pipeline.py:414), so any saved verdict would attach to the wrong finding after a rescan or engine upgrade. Add a fingerprint = hash(check, sorted locations figure/panel/file/sheet/cells/quote) and key review.json by it.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/models.py",
+     "web/src/api.ts"
+    ]
+   },
+   {
+    "category": "verdict-tracking",
+    "title": "Score after human review",
+    "description": "risk_score (models.py:149) already supports recomputation from dicts; recompute excluding human-dismissed findings and boosting confirmed ones, and show it like score_ai ('after your review') in the Score ring (RunView.tsx Score) and Mac ScoreBadge.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/models.py",
+     "engine/paperinspector/server.py",
+     "web/src/RunView.tsx",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "verdict-tracking",
+    "title": "Review progress and status filter",
+    "description": "Show 'Reviewed 7 of 23' in the rail header and add status chips (Unreviewed / Confirmed / Dismissed / Needs data) next to the category chips in RunView.tsx so a reviewer can work through a paper to zero.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "web/src/RunView.tsx",
+     "web/src/styles.css",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "annotations",
+    "title": "Free-text notes per finding and per run",
+    "description": "Markdown notes attached to a finding or to the whole paper (case notes), autosaved to review.json, shown in Inspector and included in exports. Integrity officers need to record 'contacted authors on <date>' etc.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/server.py",
+     "web/src/RunView.tsx",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "annotations",
+    "title": "Draw region annotations on figures",
+    "description": "Let users draw boxes/arrows/labels over the FigureCanvas SVG overlay (RunView.tsx FigureCanvas) to mark problems the detectors missed (e.g. flipped band within a blot, the main real-case miss per README), saved as user findings with kind 'manual' that flow into PubPeer drafts and reports.",
+    "value": 5,
+    "effort": 3,
+    "files": [
+     "web/src/RunView.tsx",
+     "engine/paperinspector/server.py",
+     "engine/paperinspector/report.py",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "annotations",
+    "title": "Add a manual finding from a blink comparison",
+    "description": "ManualCompare (RunView.tsx) shows an alignment result but it is thrown away on 'Clear comparison'. Add 'Save as finding' which persists the pair, the compare measures and generated evidence GIF via evidence.pair_evidence.",
+    "value": 5,
+    "effort": 2,
+    "files": [
+     "web/src/RunView.tsx",
+     "engine/paperinspector/server.py",
+     "engine/paperinspector/evidence.py",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "verdict-tracking",
+    "title": "Reviewer identity and audit trail",
+    "description": "Record reviewer name/initials (from settings) and a timestamped log of every verdict/note change in review.json; display as a history list in the Inspector. Important for institutional RIO investigations.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/settings.py",
+     "engine/paperinspector/server.py",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "history-search",
+    "title": "Search and filter recent scans",
+    "description": "Home 'Recent scans' (App.tsx ~160) is an unfiltered list. Add a search box (title, DOI, journal, first author), score range, has-serious, date range, and multi-paper filter; mirror with .searchable in the Mac sidebar (App.swift NavigationSplitView).",
+    "value": 5,
+    "effort": 2,
+    "files": [
+     "web/src/App.tsx",
+     "engine/paperinspector/pipeline.py",
+     "mac/Sources/PaperInspector/App.swift"
+    ]
+   },
+   {
+    "category": "history-search",
+    "title": "SQLite run index instead of reading every report.json",
+    "description": "list_runs (pipeline.py:493) parses every report.json on each /api/runs call, which gets slow with hundreds of runs and carries no journal/author fields. Maintain runs/index.sqlite updated in _finish and on delete, with metadata, top checks, verdict counts.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/server.py"
+    ]
+   },
+   {
+    "category": "history-search",
+    "title": "Search findings across all runs",
+    "description": "Query like 'all papers with stats.grim' or 'reused image confirmed by me' across the library; a Findings Explorer page with check/severity/verdict facets that deep-links into each run.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/server.py",
+     "engine/paperinspector/pipeline.py",
+     "web/src/App.tsx",
+     "web/src/api.ts"
+    ]
+   },
+   {
+    "category": "history-search",
+    "title": "Tags, collections and starred runs",
+    "description": "Tag runs ('Journal X Oct batch', 'Case 14') and star them; filter sidebar by tag. Stored in the run index; Mac sidebar gets sections per collection.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/server.py",
+     "web/src/App.tsx",
+     "mac/Sources/PaperInspector/App.swift"
+    ]
+   },
+   {
+    "category": "history-search",
+    "title": "Sort recent scans by date, score, or serious-count",
+    "description": "Simple sort control for the Home list and Mac sidebar; currently fixed reverse-name order (pipeline.py:497).",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "web/src/App.tsx",
+     "mac/Sources/PaperInspector/App.swift"
+    ]
+   },
+   {
+    "category": "history-search",
+    "title": "Rename / edit title of a run",
+    "description": "Uploaded PDFs without metadata show the filename as title; allow editing the display title and adding a DOI after the fact (then offer to fetch metadata + references).",
+    "value": 2,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/server.py",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "history-search",
+    "title": "Detect a paper that was already scanned",
+    "description": "run_id_for hashes the PDF but prefixes a timestamp (pipeline.py:35), and scan_doi always makes a new run, so rescanning silently duplicates. Before starting, check the index for the same DOI or PDF hash and offer 'Open previous scan (date, engine version)' or 'Scan again'.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/server.py",
+     "web/src/App.tsx",
+     "mac/Sources/PaperInspector/App.swift"
+    ]
+   },
+   {
+    "category": "history-search",
+    "title": "Rescan with the current engine and diff results",
+    "description": "report.json records version; add 'Rescan' that reuses run source files and shows new / gone / changed findings versus the previous run, carrying verdicts over by fingerprint.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/server.py",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "history-search",
+    "title": "Trash with undo instead of immediate rmtree",
+    "description": "DELETE /api/runs/{rid} (server.py:143) does shutil.rmtree right after a browser confirm() (App.tsx:170). Move to runs/.trash with an Undo toast and 30-day purge.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/server.py",
+     "web/src/App.tsx",
+     "mac/Sources/PaperInspector/App.swift"
+    ]
+   },
+   {
+    "category": "history-search",
+    "title": "Storage manager",
+    "description": "Show disk used per run and by the DOI fetch cache (HOME/cache), with 'clear evidence images older than N days', 'clear fetch cache', and 'reveal data folder'.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/server.py",
+     "web/src/App.tsx",
+     "mac/Sources/PaperInspector/App.swift"
+    ]
+   },
+   {
+    "category": "batch-queue",
+    "title": "Batch DOI scanning (paste list, CSV, RIS, BibTeX)",
+    "description": "New POST /api/batch accepting many DOIs or a reference-manager export; creates queued jobs and a batch record. Home gets a 'Many papers' tab; CLI gets 'paperinspector batch dois.txt'.",
+    "value": 5,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/server.py",
+     "engine/paperinspector/cli.py",
+     "engine/paperinspector/fetch.py",
+     "web/src/App.tsx",
+     "web/src/api.ts"
+    ]
+   },
+   {
+    "category": "batch-queue",
+    "title": "Persistent bounded job queue",
+    "description": "JOBS is an in-memory dict (server.py:31) and each job spawns an unbounded daemon thread (server.py:53). Replace with a queue persisted to HOME/jobs.json with a concurrency limit (setting), so 50 DOIs do not run 50 OpenCV pipelines at once.",
+    "value": 5,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/server.py",
+     "engine/paperinspector/settings.py"
+    ]
+   },
+   {
+    "category": "performance",
+    "title": "Cancel a running scan",
+    "description": "No cancel exists anywhere. Add a cancel flag checked inside the progress callback (raise Cancelled), DELETE /api/jobs/{jid}, and a Cancel button next to the progress bar (App.tsx drop zone, Mac HomeView).",
+    "value": 5,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/server.py",
+     "engine/paperinspector/pipeline.py",
+     "web/src/App.tsx",
+     "web/src/api.ts",
+     "mac/Sources/PaperInspector/App.swift",
+     "mac/Sources/PaperInspector/Engine.swift"
+    ]
+   },
+   {
+    "category": "performance",
+    "title": "Survive engine restarts (interrupted jobs, retry)",
+    "description": "If the engine restarts mid-job, the web poller in RunView.tsx:56 calls api.job without try/catch and the AI button stays stuck; Home shows a raw 404. Mark persisted jobs 'interrupted' at startup, surface a Retry button, and handle 404 gracefully.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/server.py",
+     "web/src/RunView.tsx",
+     "web/src/App.tsx",
+     "mac/Sources/PaperInspector/Engine.swift"
+    ]
+   },
+   {
+    "category": "batch-queue",
+    "title": "Queue dashboard",
+    "description": "A Jobs page/sidebar section listing queued/running/done/failed jobs with stage, elapsed time, retry, cancel, reorder and 'open result'. Mac: a Jobs popover in the toolbar.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "web/src/App.tsx",
+     "web/src/api.ts",
+     "engine/paperinspector/server.py",
+     "mac/Sources/PaperInspector/App.swift"
+    ]
+   },
+   {
+    "category": "batch-queue",
+    "title": "Batch triage table",
+    "description": "For a batch, a sortable table: paper, journal, score, serious count, top check names, fetch completeness (PDF/XML/supplements found), human status. Export to CSV/XLSX. This is what editors screening an issue actually need.",
+    "value": 5,
+    "effort": 3,
+    "files": [
+     "web/src/App.tsx",
+     "engine/paperinspector/server.py",
+     "engine/paperinspector/pipeline.py"
+    ]
+   },
+   {
+    "category": "batch-queue",
+    "title": "Scan an author, lab or journal issue",
+    "description": "Given an ORCID, OpenAlex author id, or ISSN + date range, list works from OpenAlex, let the user tick which to queue, scan each, then run cross-paper image comparison across all of them.",
+    "value": 5,
+    "effort": 4,
+    "files": [
+     "engine/paperinspector/fetch.py",
+     "engine/paperinspector/server.py",
+     "engine/paperinspector/cli.py",
+     "web/src/App.tsx"
+    ]
+   },
+   {
+    "category": "batch-queue",
+    "title": "Cross-paper comparison from DOIs or existing runs",
+    "description": "scan_case (pipeline.py:446) only takes local PDFs and re-segments everything. Let a case be built from existing runs or DOIs (reusing their figures/panels) via 'Compare with other scans\u2026' in RunView.",
+    "value": 5,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/server.py",
+     "web/src/RunView.tsx",
+     "web/src/App.tsx"
+    ]
+   },
+   {
+    "category": "batch-queue",
+    "title": "Personal image library: match new papers against all past scans",
+    "description": "Persist SIFT descriptors per panel (imgdup.features) in a library index so every new scan is also checked against every previously scanned paper; findings labelled 'also appears in <other paper>'.",
+    "value": 5,
+    "effort": 4,
+    "files": [
+     "engine/paperinspector/imgdup.py",
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/settings.py"
+    ]
+   },
+   {
+    "category": "batch-queue",
+    "title": "Watch folder",
+    "description": "'paperinspector watch ~/PaperInspector/Inbox' and a Mac preference using FSEvents: any PDF (plus same-stem supplements) dropped in is queued, results moved to Done/ with a notification.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/cli.py",
+     "engine/paperinspector/server.py",
+     "mac/Sources/PaperInspector/Engine.swift",
+     "mac/Sources/PaperInspector/App.swift"
+    ]
+   },
+   {
+    "category": "batch-queue",
+    "title": "Watch list for later retractions and notices",
+    "description": "Mark DOIs as watched; a daily check of Crossref/OpenAlex (reuse fetch._metadata and reporting.record) raises a notification when a retraction, EoC or correction appears, or new PubPeer comments.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/server.py",
+     "engine/paperinspector/fetch.py",
+     "engine/paperinspector/reporting.py",
+     "mac/Sources/PaperInspector/App.swift"
+    ]
+   },
+   {
+    "category": "batch-queue",
+    "title": "Completion webhook / notification",
+    "description": "Optional webhook URL or local notification when a job or batch finishes (Mac: UNUserNotificationCenter; web: Notification API).",
+    "value": 2,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/server.py",
+     "web/src/App.tsx",
+     "mac/Sources/PaperInspector/App.swift"
+    ]
+   },
+   {
+    "category": "performance",
+    "title": "Elapsed time and ETA during scans",
+    "description": "job['started'] is recorded (server.py:36) but never shown. Display elapsed time and an ETA estimated from page/panel counts and past timings.",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/server.py",
+     "web/src/App.tsx",
+     "mac/Sources/PaperInspector/App.swift"
+    ]
+   },
+   {
+    "category": "performance",
+    "title": "Stage checklist instead of a single progress bar",
+    "description": "Show a checklist: metadata, PMC package, figures found (n), supplements downloaded (k of m), panels compared (x/y), references checked (a/b). Gives users confidence the fetch actually found the supplements.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/fetch.py",
+     "engine/paperinspector/server.py",
+     "web/src/App.tsx",
+     "mac/Sources/PaperInspector/App.swift"
+    ]
+   },
+   {
+    "category": "performance",
+    "title": "Server-sent events for progress",
+    "description": "Replace 400 ms (App.tsx:45) and 900 ms (RunView.tsx:56) polling plus the Mac poll loop with GET /api/jobs/{jid}/events (SSE).",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/server.py",
+     "web/src/api.ts",
+     "web/src/App.tsx",
+     "web/src/RunView.tsx",
+     "mac/Sources/PaperInspector/Engine.swift"
+    ]
+   },
+   {
+    "category": "performance",
+    "title": "Show partial results while the scan continues",
+    "description": "Write an interim report.json after metadata/text/stats checks so the user can read paper info and text findings while image matching is still running.",
+    "value": 4,
+    "effort": 4,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "web/src/RunView.tsx",
+     "web/src/App.tsx"
+    ]
+   },
+   {
+    "category": "performance",
+    "title": "Scan profiles and per-check toggles",
+    "description": "Quick (images only), Standard, Full (online refs, history, accessions) profiles, plus enabling/disabling individual checks; stored in settings and recorded in report.json for reproducibility.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/settings.py",
+     "web/src/App.tsx",
+     "mac/Sources/PaperInspector/App.swift"
+    ]
+   },
+   {
+    "category": "performance",
+    "title": "Reuse the DOI fetch cache",
+    "description": "fetch() (fetch.py:159) keys a cache folder by DOI but re-downloads metadata, PMC package and supplements every time. Load Bundle.load when it is fresh (< N days) and offer 'Refetch from sources'.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/fetch.py",
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/cli.py"
+    ]
+   },
+   {
+    "category": "performance",
+    "title": "CPU/thread limit and background priority",
+    "description": "Setting to cap worker threads (OCR uses ThreadPoolExecutor(4) in pipeline.py:303) and run batches at low priority so the laptop stays usable.",
+    "value": 2,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/settings.py"
+    ]
+   },
+   {
+    "category": "export",
+    "title": "PDF report export",
+    "description": "Only HTML exists (report.html_report). Add a print stylesheet plus a server-side PDF render (or window.print with page breaks per finding) titled with DOI and date, for attaching to editorial systems.",
+    "value": 5,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/report.py",
+     "engine/paperinspector/server.py",
+     "web/src/RunView.tsx",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "export",
+    "title": "CSV / XLSX findings export",
+    "description": "One row per finding: id, fingerprint, check label (CHECK_NAMES), kind, severity, confidence, figure/panel/page/file/sheet/cells, AI verdict, human verdict, note. GET /api/runs/{rid}/findings.csv and batch-level export.",
+    "value": 5,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/report.py",
+     "engine/paperinspector/server.py",
+     "web/src/RunView.tsx",
+     "engine/paperinspector/cli.py"
+    ]
+   },
+   {
+    "category": "export",
+    "title": "PubPeer composer with finding selection",
+    "description": "pubpeer() hard-caps at 8 items and drops record.* (report.py:40-45). Give the Report tab checkboxes per finding, drag to reorder, per-item edit, and optional evidence image attachments; honour human verdicts (currently _active only skips AI false positives, report.py:28).",
+    "value": 5,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/report.py",
+     "engine/paperinspector/server.py",
+     "web/src/RunView.tsx",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "export",
+    "title": "Letter templates: editor, authors, institution",
+    "description": "Template gallery beyond PubPeer: concern letter to the editor, raw-data request to corresponding author, referral to the institution's research integrity office, referee report section. Editable templates with placeholders filled from meta and selected findings.",
+    "value": 5,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/report.py",
+     "engine/paperinspector/server.py",
+     "web/src/RunView.tsx",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "export",
+    "title": "Evidence pack ZIP with chain of custody",
+    "description": "Download a ZIP: report.html/pdf, findings.csv, evidence PNG/GIFs, original figure files, source PDF, supplements, and manifest.json with SHA-256 of every file, engine version, data sources and timestamps.",
+    "value": 5,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/server.py",
+     "engine/paperinspector/report.py",
+     "web/src/RunView.tsx",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "export",
+    "title": "Export a single finding as a figure or GIF",
+    "description": "'Export this finding' renders a side-by-side annotated PNG plus blink GIF with labels and DOI, ready for slides or a PubPeer image upload.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/evidence.py",
+     "engine/paperinspector/server.py",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "export",
+    "title": "Markdown and DOCX exports",
+    "description": "Markdown (for GitHub issues, Notion, Obsidian) and Word referee-report export of the findings with images.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/report.py",
+     "engine/paperinspector/server.py",
+     "engine/paperinspector/cli.py"
+    ]
+   },
+   {
+    "category": "export",
+    "title": "Reproducibility block in every export",
+    "description": "Include engine version, scan profile, thresholds, hashes of inputs, which sources were reached (report.log), and the AI model used, so a third party can re-run it.",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/report.py",
+     "engine/paperinspector/pipeline.py"
+    ]
+   },
+   {
+    "category": "export",
+    "title": "Redacted vs internal report",
+    "description": "Toggle that strips private notes, reviewer names, and AI reasoning from an export intended for authors or the public.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/report.py",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "sharing",
+    "title": "Portable .pinspect case file",
+    "description": "Export/import a run folder (report, review.json, evidence, figures) as one file; double-click opens it in the Mac app (UTType declaration) and Import in the web app. Lets colleagues review the same evidence offline.",
+    "value": 5,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/server.py",
+     "engine/paperinspector/pipeline.py",
+     "mac/build_app.sh",
+     "mac/Sources/PaperInspector/App.swift",
+     "web/src/App.tsx"
+    ]
+   },
+   {
+    "category": "sharing",
+    "title": "Interactive static report with the blink comparator",
+    "description": "html_report is static images; export a self-contained HTML that embeds both aligned frames and a small JS blink/swipe/diff viewer so recipients can flicker the evidence themselves.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/report.py",
+     "web/src/Blink.tsx"
+    ]
+   },
+   {
+    "category": "sharing",
+    "title": "Read-only LAN share link",
+    "description": "Optional 'Share on local network' that serves one run read-only behind a random token (server currently binds 127.0.0.1 only) for a co-reviewer in the same office.",
+    "value": 3,
+    "effort": 4,
+    "files": [
+     "engine/paperinspector/server.py",
+     "engine/paperinspector/cli.py",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "compare-versions",
+    "title": "Preprint vs published comparison",
+    "description": "From a journal DOI, find the bioRxiv/medRxiv preprint (Crossref 'has-preprint' relation / bioRxiv pub API; fetch._biorxiv exists) and run a version comparison: figures added/removed/changed, panels that changed between versions, blink across versions.",
+    "value": 5,
+    "effort": 4,
+    "files": [
+     "engine/paperinspector/fetch.py",
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/server.py",
+     "web/src/RunView.tsx",
+     "web/src/App.tsx"
+    ]
+   },
+   {
+    "category": "compare-versions",
+    "title": "Number and text diff between versions",
+    "description": "Diff methods/results text between preprint and published (or original vs corrected): changed sample sizes, p-values, removed sentences, using textcheck/stats extraction.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/stats.py",
+     "engine/paperinspector/textcheck.py",
+     "engine/paperinspector/pipeline.py",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "compare-versions",
+    "title": "Correction notice checker",
+    "description": "When reporting.record finds a correction, fetch the correction PDF, extract its replacement figure and compare it with the original figure panel by panel.",
+    "value": 4,
+    "effort": 4,
+    "files": [
+     "engine/paperinspector/reporting.py",
+     "engine/paperinspector/fetch.py",
+     "engine/paperinspector/pipeline.py"
+    ]
+   },
+   {
+    "category": "compare-versions",
+    "title": "Compare two runs side by side",
+    "description": "Pick any two runs in history and see findings delta and a cross-run panel compare (reusing /compare with run-qualified panel ids).",
+    "value": 3,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/server.py",
+     "web/src/App.tsx",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "keyboard-review",
+    "title": "Keyboard-driven review",
+    "description": "j/k next/previous finding, Enter focus inspector, c confirm, x false positive, r needs raw data, n note, b toggle blink, 1-5 image views (VIEWS in RunView.tsx), f figures tab, ? shortcut overlay. Mac: menu commands with the same keys (only Cmd-O exists, App.swift:23).",
+    "value": 5,
+    "effort": 2,
+    "files": [
+     "web/src/RunView.tsx",
+     "web/src/styles.css",
+     "mac/Sources/PaperInspector/App.swift",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "keyboard-review",
+    "title": "Command palette (Cmd-K)",
+    "description": "Fuzzy jump to any run, finding, figure or action (export, rescan, ask AI, settings).",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "web/src/App.tsx",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "evidence-viewer",
+    "title": "Zoom, pan and loupe on figures",
+    "description": "FigureCanvas (RunView.tsx) only fits the figure; add wheel/pinch zoom, drag pan, a magnifier loupe, and 'view at 100%'. Essential for blots and small panels. Mac FigureCanvas likewise.",
+    "value": 5,
+    "effort": 3,
+    "files": [
+     "web/src/RunView.tsx",
+     "web/src/styles.css",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "evidence-viewer",
+    "title": "Synchronized loupe and zoom in the blink comparator",
+    "description": "Zoom both frames together in Blink/side-by-side so the same region is magnified in A and B.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "web/src/Blink.tsx",
+     "mac/Sources/PaperInspector/BlinkView.swift"
+    ]
+   },
+   {
+    "category": "evidence-viewer",
+    "title": "Crossfade, contrast and gamma in the comparator",
+    "description": "Add an opacity slider mode and shared contrast/gamma/invert controls applied to both frames, to bring out faint background texture.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "web/src/Blink.tsx",
+     "web/src/styles.css",
+     "mac/Sources/PaperInspector/BlinkView.swift"
+    ]
+   },
+   {
+    "category": "evidence-viewer",
+    "title": "Query by region: find this crop anywhere",
+    "description": "Draw a box on a panel and search all panels (and the library) for it, including mirrored/rotated; reuses imgdup feature matching on a sub-image. Addresses the README's weakest area (band-level reuse inside blots).",
+    "value": 5,
+    "effort": 4,
+    "files": [
+     "engine/paperinspector/imgdup.py",
+     "engine/paperinspector/server.py",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "evidence-viewer",
+    "title": "'Find this panel elsewhere' action",
+    "description": "One-click: compare the selected panel against all panels of this paper at a relaxed threshold, list near-misses with scores (the detector's sub-threshold candidates).",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/imgdup.py",
+     "engine/paperinspector/server.py",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "evidence-viewer",
+    "title": "Persistent compare tray",
+    "description": "choose() resets pick (RunView.tsx choose) and there is no visible tray; add a tray of picked panels across figures with thumbnails, swap A/B, clear.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "web/src/RunView.tsx",
+     "web/src/styles.css"
+    ]
+   },
+   {
+    "category": "evidence-viewer",
+    "title": "Per-panel forensic views and histogram",
+    "description": "Levels/noise/false colour exist only for whole figures (/figures/{fid}/view.png); expose them in the Inspector for the selected panel plus an intensity histogram and RGB channel split (useful for spotting saturated or pasted regions).",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/server.py",
+     "engine/paperinspector/forensics.py",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "evidence-viewer",
+    "title": "Fullscreen lightbox for evidence images",
+    "description": "Evidence PNG/GIFs in Inspector are small; click to open fullscreen with arrow-key navigation.",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "web/src/RunView.tsx",
+     "web/src/styles.css",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "evidence-viewer",
+    "title": "Open figure at original resolution and download panel crops",
+    "description": "Buttons to open the original figure file (JATS/PLOS originals) and save a panel crop PNG.",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "web/src/RunView.tsx",
+     "engine/paperinspector/server.py"
+    ]
+   },
+   {
+    "category": "evidence-viewer",
+    "title": "Show the PDF page next to the finding",
+    "description": "For text/stats/reporting findings with a page and quote, render the PDF page with the quote highlighted instead of the 'not a figure' empty stage (RunView.tsx stage-empty).",
+    "value": 5,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/server.py",
+     "engine/paperinspector/pdfdoc.py",
+     "web/src/RunView.tsx",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "evidence-viewer",
+    "title": "Spreadsheet viewer for data findings",
+    "description": "Data findings list file/sheet/cells (RunView.tsx locs) but only link to download the file; render the sheet region with flagged cells highlighted (copied blocks in two colours).",
+    "value": 5,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/server.py",
+     "engine/paperinspector/tables.py",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "evidence-viewer",
+    "title": "Statistics recompute panel",
+    "description": "For stats.recompute/GRIM findings, show the reported values, the recomputed p-value or allowable means, and an editable calculator so the reviewer can test rounding assumptions.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/stats.py",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "evidence-viewer",
+    "title": "Reference table view",
+    "description": "PaperTab shows only aggregate reference stats; add a full table of references with resolved/unresolved, retracted, self-citation, off-topic flags and links.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/refcheck.py",
+     "engine/paperinspector/pipeline.py",
+     "web/src/PaperTab.tsx"
+    ]
+   },
+   {
+    "category": "keyboard-review",
+    "title": "Group findings by figure or by check",
+    "description": "Toggle the rail between by-severity (current), by-figure and by-check grouping; collapse repeated weak hits of the same check.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "web/src/RunView.tsx",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "web",
+    "title": "Deep links to findings and figures",
+    "description": "useHash (App.tsx:5) only understands #/run/<id>. Support #/run/<id>/finding/<fingerprint> and /figure/<fid>, update on selection, so links can be pasted into notes and emails.",
+    "value": 4,
+    "effort": 1,
+    "files": [
+     "web/src/App.tsx",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "web",
+    "title": "Inspect-by-URL deep link",
+    "description": "#/inspect?doi=10.x/... auto-starts a DOI scan (with confirmation), the hook a bookmarklet or extension needs.",
+    "value": 4,
+    "effort": 1,
+    "files": [
+     "web/src/App.tsx"
+    ]
+   },
+   {
+    "category": "web",
+    "title": "Bookmarklet and browser extension",
+    "description": "On a journal page, read citation_doi meta and open http://127.0.0.1:8765/#/inspect?doi=...; an extension could also show the cached score badge for the current DOI. Note CORS only allows localhost:5173 (server.py:27), so the extension should use navigation, or a narrowly scoped endpoint.",
+    "value": 5,
+    "effort": 3,
+    "files": [
+     "web/src/App.tsx",
+     "engine/paperinspector/server.py"
+    ]
+   },
+   {
+    "category": "web",
+    "title": "Smarter input: PMID, PMCID, arXiv, URL, citation or title",
+    "description": "Accept PMID/PMCID/arXiv ids, publisher URLs, pasted citations and titles (resolve via OpenAlex/Crossref search with a pick list) instead of DOI-only; validate format before submit.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/fetch.py",
+     "engine/paperinspector/server.py",
+     "web/src/App.tsx",
+     "mac/Sources/PaperInspector/App.swift"
+    ]
+   },
+   {
+    "category": "web",
+    "title": "Folder and zip drag-and-drop, clipboard paste",
+    "description": "Allow dropping a folder (webkitdirectory / DataTransferItem.getAsFileSystemHandle) and pasting a PDF or image from the clipboard.",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "web/src/App.tsx"
+    ]
+   },
+   {
+    "category": "web",
+    "title": "Offline-capable PWA",
+    "description": "Service worker caching the app shell and viewed runs' report/figures so reviewing works without the engine (read-only), with install-as-app.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "web/src/main.tsx",
+     "web/vite.config.ts"
+    ]
+   },
+   {
+    "category": "web",
+    "title": "Engine-down screen with retry",
+    "description": "When /api/runs fails, Home shows only a red sentence (App.tsx:40). Show a dedicated card with a copyable start command, a Retry button and auto-reconnect.",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "web/src/App.tsx",
+     "web/src/styles.css"
+    ]
+   },
+   {
+    "category": "bug-fix",
+    "title": "Unhandled errors on demo and AI buttons",
+    "description": "'Try the demo paper' awaits api.demo() without try/catch (App.tsx:139); the AI poll calls api.job without catch (RunView.tsx:56); AI errors use alert() (RunView.tsx:104). Route all through the error banner.",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "web/src/App.tsx",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "web",
+    "title": "Responsive tablet/phone review layout",
+    "description": "Three-pane layout collapses at 760px (styles.css:276) but stage/inspector become long scrolls; add a stacked tabbed layout for iPad review.",
+    "value": 2,
+    "effort": 2,
+    "files": [
+     "web/src/styles.css",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "web",
+    "title": "Resizable panes",
+    "description": "Draggable splitters between rail, stage and inspector, remembered per user in localStorage.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "web/src/RunView.tsx",
+     "web/src/styles.css"
+    ]
+   },
+   {
+    "category": "onboarding",
+    "title": "Guided first-run tour on the demo paper",
+    "description": "A 5-step coach-mark tour: integrity vs quality, the score, a reused image, blink/swipe/diff, drafting a comment. Shown once, re-openable from Help.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "web/src/App.tsx",
+     "web/src/RunView.tsx",
+     "mac/Sources/PaperInspector/App.swift"
+    ]
+   },
+   {
+    "category": "onboarding",
+    "title": "'What this check means' explainer per check",
+    "description": "CHECK_NAMES (api.ts) only gives labels. Add per-check explanation: what was measured, thresholds, common innocent explanations (e.g. loading controls reused legitimately), what to ask the authors, and a reference. Shown as an info popover in the Inspector.",
+    "value": 5,
+    "effort": 2,
+    "files": [
+     "web/src/api.ts",
+     "web/src/RunView.tsx",
+     "engine/paperinspector/report.py",
+     "mac/Sources/PaperInspector/Models.swift"
+    ]
+   },
+   {
+    "category": "onboarding",
+    "title": "Methodology and accuracy page in-app",
+    "description": "Surface README benchmark results, known blind spots (band-level splices) and the 'candidates, not verdicts' guidance in an About/Methods page, so users calibrate trust.",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "web/src/App.tsx",
+     "mac/Sources/PaperInspector/App.swift"
+    ]
+   },
+   {
+    "category": "onboarding",
+    "title": "Training mode for students",
+    "description": "Generate practice papers with synth.py (hidden planted manipulations), let the student mark suspected issues, then reveal and score them.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/synth.py",
+     "engine/paperinspector/server.py",
+     "web/src/App.tsx"
+    ]
+   },
+   {
+    "category": "onboarding",
+    "title": "Example gallery of public cases",
+    "description": "Curated list from tools/real_cases_dois.json with one-click scan and a short note on what the retraction notice said.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "tools/real_cases_dois.json",
+     "web/src/App.tsx"
+    ]
+   },
+   {
+    "category": "settings",
+    "title": "Settings window in the Mac app",
+    "description": "The Mac app has no Settings scene at all (no Settings in mac/Sources), so AI provider, model, keys and the OpenAlex key are web-only. Add a SwiftUI Settings scene backed by /api/settings.",
+    "value": 5,
+    "effort": 2,
+    "files": [
+     "mac/Sources/PaperInspector/App.swift",
+     "mac/Sources/PaperInspector/Engine.swift",
+     "mac/Sources/PaperInspector/Models.swift"
+    ]
+   },
+   {
+    "category": "settings",
+    "title": "Keychain storage for API keys",
+    "description": "Keys are written to the settings JSON (settings.py save/keys). On macOS store them in the Keychain and pass to the engine via env/stdin.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/settings.py",
+     "mac/Sources/PaperInspector/Engine.swift"
+    ]
+   },
+   {
+    "category": "settings",
+    "title": "Detector sensitivity controls",
+    "description": "Expose key thresholds (texture NCC, min inliers, terminal-digit p-value cutoff, self-citation rate) with presets Conservative/Default/Sensitive, recorded in each report.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/settings.py",
+     "engine/paperinspector/imgdup.py",
+     "engine/paperinspector/datacheck.py",
+     "engine/paperinspector/refcheck.py",
+     "web/src/App.tsx"
+    ]
+   },
+   {
+    "category": "settings",
+    "title": "Test AI connection and estimate cost",
+    "description": "A 'Test' button in Settings that sends a tiny prompt and reports latency/vision support, plus a pre-run estimate of figures/tokens before 'Ask the AI investigator'.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/agent.py",
+     "engine/paperinspector/server.py",
+     "web/src/App.tsx",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "settings",
+    "title": "Default online-reference check and polite contact email",
+    "description": "settings has an 'online' default (settings.py DEFAULTS) that the web ignores (local toggle in App.tsx). Wire it up, and add a contact email for Crossref/OpenAlex polite pools.",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/settings.py",
+     "engine/paperinspector/fetch.py",
+     "web/src/App.tsx"
+    ]
+   },
+   {
+    "category": "settings",
+    "title": "Data folder location and theme settings",
+    "description": "Choose PAPERINSPECTOR_HOME from the UI (currently env only, pipeline.py:25), and a Light/Dark/System theme override plus compact density.",
+    "value": 2,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/settings.py",
+     "web/src/styles.css",
+     "web/src/App.tsx"
+    ]
+   },
+   {
+    "category": "accessibility",
+    "title": "Cap blink rate to a photosensitivity-safe speed",
+    "description": "Blink speed range allows 150 ms per flip (Blink.tsx:108, BlinkView.swift:43), i.e. more than 3 flashes per second, which breaks WCAG 2.3.1 for high-contrast frames. Clamp minimum to ~350 ms, default to swipe under reduced-motion, and add a warning.",
+    "value": 4,
+    "effort": 1,
+    "files": [
+     "web/src/Blink.tsx",
+     "mac/Sources/PaperInspector/BlinkView.swift"
+    ]
+   },
+   {
+    "category": "accessibility",
+    "title": "Severity not conveyed by colour alone",
+    "description": "Severity relies on coloured class names (item.critical etc.). Add icons/shape glyphs and text, and run a contrast check on --medium/--low tokens in both themes (styles.css:11-37).",
+    "value": 4,
+    "effort": 1,
+    "files": [
+     "web/src/RunView.tsx",
+     "web/src/styles.css",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "accessibility",
+    "title": "Keyboard-reachable figure panels",
+    "description": "Panels in the SVG overlay are <g onClick> with no tabIndex/role (RunView.tsx FigureCanvas), so keyboard and screen-reader users cannot pick panels to compare. Add focusable buttons with labels.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "web/src/RunView.tsx",
+     "web/src/styles.css"
+    ]
+   },
+   {
+    "category": "accessibility",
+    "title": "Live regions and proper listbox semantics",
+    "description": "Announce scan progress and completion via aria-live; make the findings list a listbox with aria-selected; give tabs aria-controls.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "web/src/RunView.tsx",
+     "web/src/App.tsx"
+    ]
+   },
+   {
+    "category": "accessibility",
+    "title": "Accessible dialogs instead of confirm()/alert()",
+    "description": "Replace confirm (App.tsx:170) and alert (RunView.tsx:104) with in-app dialogs with focus management.",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "web/src/App.tsx",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "accessibility",
+    "title": "Meaningful alt text for evidence",
+    "description": "Evidence images use the filename as alt (RunView.tsx Inspector still.map). Generate descriptive alt from the finding (e.g. 'Panels 2B and 4D aligned, mirrored').",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "web/src/RunView.tsx",
+     "engine/paperinspector/evidence.py"
+    ]
+   },
+   {
+    "category": "mac-native",
+    "title": "Open panel accepts all supplement types",
+    "description": "pickFiles only allows .pdf/.png/.jpeg/.tiff (App.swift:102), so Cmd-O cannot add xlsx/csv/docx/zip supplements even though the engine and the home copy say they are checked. Add those UTTypes.",
+    "value": 4,
+    "effort": 1,
+    "files": [
+     "mac/Sources/PaperInspector/App.swift"
+    ]
+   },
+   {
+    "category": "mac-native",
+    "title": "Mac feature parity with web",
+    "description": "Mac lacks the 'check references online for uploads' toggle, the 'Show notes' toggle for info findings, AI-only observations, the Figures browser tab, and Download report. Bring these over.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "mac/Sources/PaperInspector/App.swift",
+     "mac/Sources/PaperInspector/RunView.swift",
+     "mac/Sources/PaperInspector/Engine.swift"
+    ]
+   },
+   {
+    "category": "mac-native",
+    "title": "Services menu: Inspect DOI",
+    "description": "An NSServices provider so selecting a DOI or citation in any app (Mail, Preview, Safari) and choosing Services > Inspect in Paper Inspector starts a scan; 'Inspect PDF' for Finder files.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "mac/Sources/PaperInspector/App.swift",
+     "mac/build_app.sh"
+    ]
+   },
+   {
+    "category": "mac-native",
+    "title": "Shortcuts / App Intents",
+    "description": "Intents: Inspect DOI, Inspect PDF, Get risk score, Export report, List serious findings. Lets users build automations (e.g. scan every PDF saved to a folder).",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "mac/Sources/PaperInspector/App.swift",
+     "mac/Sources/PaperInspector/Engine.swift",
+     "mac/Package.swift"
+    ]
+   },
+   {
+    "category": "mac-native",
+    "title": "Spotlight indexing of scans",
+    "description": "Index runs with CoreSpotlight (title, DOI, authors, score, finding labels) so 'Paper Inspector Smith 2021' finds the scan.",
+    "value": 3,
+    "effort": 3,
+    "files": [
+     "mac/Sources/PaperInspector/Engine.swift",
+     "mac/Sources/PaperInspector/App.swift"
+    ]
+   },
+   {
+    "category": "mac-native",
+    "title": "Quick Look for case files and reports",
+    "description": "A Quick Look preview extension that renders a .pinspect file as score + top findings + evidence thumbnails.",
+    "value": 3,
+    "effort": 4,
+    "files": [
+     "mac/Package.swift",
+     "mac/build_app.sh"
+    ]
+   },
+   {
+    "category": "mac-native",
+    "title": "Notifications and Dock progress",
+    "description": "Dock tile progress bar and badge with serious-finding count; user notification on completion with 'Open' action.",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "mac/Sources/PaperInspector/App.swift",
+     "mac/Sources/PaperInspector/Engine.swift"
+    ]
+   },
+   {
+    "category": "mac-native",
+    "title": "Menu commands and shortcuts",
+    "description": "Add Review/View menus: Next/Previous Finding, Confirm, Dismiss, Blink, Export, Ask AI, Rescan, with shortcuts. Today only 'Screen a Paper\u2026' Cmd-O exists (App.swift:23).",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "mac/Sources/PaperInspector/App.swift",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "mac-native",
+    "title": "Open a run in its own window or tab",
+    "description": "WindowGroup(for: String.self) so runs can be opened in separate windows/tabs for side-by-side comparison.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "mac/Sources/PaperInspector/App.swift"
+    ]
+   },
+   {
+    "category": "mac-native",
+    "title": "Share sheet and drag-out of evidence",
+    "description": "ShareLink for report and PubPeer text; drag evidence images or blink GIFs from the inspector into Finder/Keynote/Mail.",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "mac/Sources/PaperInspector/RunView.swift",
+     "mac/Sources/PaperInspector/BlinkView.swift"
+    ]
+   },
+   {
+    "category": "mac-native",
+    "title": "Paste or drop a DOI/link anywhere",
+    "description": "Detect a DOI on the clipboard when the app activates ('Inspect 10.x\u2026?'), and accept dropped web links from browsers onto the window.",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "mac/Sources/PaperInspector/App.swift"
+    ]
+   },
+   {
+    "category": "mac-native",
+    "title": "paperinspector:// URL scheme",
+    "description": "Register paperinspector://inspect?doi=... and paperinspector://run/<id>/finding/<fp> for bookmarklets, notes apps and the browser extension.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "mac/build_app.sh",
+     "mac/Sources/PaperInspector/App.swift"
+    ]
+   },
+   {
+    "category": "mac-native",
+    "title": "Self-contained app with bundled engine",
+    "description": "The app depends on the checkout's .venv path baked into Info.plist (build_app.sh). Bundle a relocatable Python + engine so the .app can be shared and installed by non-developers; add a first-launch engine check screen.",
+    "value": 5,
+    "effort": 4,
+    "files": [
+     "mac/build_app.sh",
+     "mac/Sources/PaperInspector/Engine.swift",
+     "pyproject.toml"
+    ]
+   },
+   {
+    "category": "mac-native",
+    "title": "Engine port conflict handling",
+    "description": "Engine.port is fixed at 8765 (Engine.swift:7); if another process holds it, the app attaches to it or fails. Pick a free port and pass it through, and verify /api/health version matches.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "mac/Sources/PaperInspector/Engine.swift",
+     "engine/paperinspector/cli.py"
+    ]
+   },
+   {
+    "category": "cli-api",
+    "title": "CLI batch, list, show, export and rm",
+    "description": "cli.py has scan/doi/case/serve/demo only. Add 'batch FILE --jobs N --csv out.csv', 'list', 'show RUN', 'export RUN --format pdf|csv|zip|pubpeer', 'rm RUN'.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/cli.py",
+     "engine/paperinspector/report.py"
+    ]
+   },
+   {
+    "category": "cli-api",
+    "title": "CI-friendly exit codes and JSON lines",
+    "description": "'--fail-above SCORE' returns non-zero when risk exceeds a threshold (journal intake pipelines), and '--jsonl' streams one line per finding/progress event.",
+    "value": 3,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/cli.py"
+    ]
+   },
+   {
+    "category": "cli-api",
+    "title": "Versioned, documented REST API with optional token",
+    "description": "Mount routes under /api/v1, publish the OpenAPI schema and a JSON Schema for report.json, and add an optional bearer token when serving on non-loopback hosts.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/server.py",
+     "engine/paperinspector/models.py",
+     "docs"
+    ]
+   },
+   {
+    "category": "cli-api",
+    "title": "MCP server for AI agents",
+    "description": "Expose scan_doi, get_report, compare_panels and get_evidence as MCP tools so assistants can run screens and read evidence.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/server.py",
+     "engine/paperinspector/cli.py",
+     "pyproject.toml"
+    ]
+   },
+   {
+    "category": "cli-api",
+    "title": "Python library entry point",
+    "description": "A documented top-level API (paperinspector.inspect(doi_or_path, profile=...)) returning a typed Report object, for notebooks and scripted audits.",
+    "value": 2,
+    "effort": 1,
+    "files": [
+     "engine/paperinspector/__init__.py",
+     "engine/paperinspector/pipeline.py"
+    ]
+   },
+   {
+    "category": "plugins",
+    "title": "Detector plugin interface",
+    "description": "Register checks via Python entry points (name, category, kind, severity, label, 'ask' text) so labs can add detectors without forking; CHECK_NAMES and report.ASK become data served by /api/checks instead of hardcoded in api.ts and report.py.",
+    "value": 4,
+    "effort": 4,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/report.py",
+     "engine/paperinspector/server.py",
+     "web/src/api.ts"
+    ]
+   },
+   {
+    "category": "plugins",
+    "title": "Reporting-guideline rule packs",
+    "description": "Selectable checklists (ARRIVE 2.0, CONSORT, MDAR, journal-specific) implemented as rule packs over reporting.statements, producing quality notes per missing item.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/reporting.py",
+     "engine/paperinspector/settings.py"
+    ]
+   },
+   {
+    "category": "integrations",
+    "title": "Show existing PubPeer comments and Retraction Watch entries",
+    "description": "PaperTab only links out to PubPeer search and Retraction Watch (PaperTab.tsx). Fetch the PubPeer comment count and Crossref's Retraction Watch records into the Paper tab and the run list.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/history.py",
+     "engine/paperinspector/fetch.py",
+     "web/src/PaperTab.tsx",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "integrations",
+    "title": "Zotero integration",
+    "description": "Scan all items in a Zotero collection (local API or attached PDFs) and write the score back as a tag/note.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/cli.py",
+     "engine/paperinspector/server.py"
+    ]
+   },
+   {
+    "category": "integrations",
+    "title": "Editorial-system intake",
+    "description": "A simple inbound endpoint/watch-folder recipe for journal staff to auto-screen new submissions exported from their manuscript system, with batch triage results.",
+    "value": 3,
+    "effort": 4,
+    "files": [
+     "engine/paperinspector/server.py",
+     "docs"
+    ]
+   },
+   {
+    "category": "author-self-check",
+    "title": "Pre-submission self-check mode",
+    "description": "An 'I'm the author' mode: hides the risk score, rewords findings as fixes ('relabel duplicated loading control or state it in the legend'), and presents a reporting checklist; separate tone in report.py output.",
+    "value": 5,
+    "effort": 2,
+    "files": [
+     "web/src/App.tsx",
+     "web/src/RunView.tsx",
+     "engine/paperinspector/report.py",
+     "mac/Sources/PaperInspector/App.swift"
+    ]
+   },
+   {
+    "category": "author-self-check",
+    "title": "Accept manuscript .docx as the main file",
+    "description": "Uploads require a PDF or image as main (App.tsx start). Authors usually have Word; convert/parse .docx (python-docx is already a dependency) with embedded figures as the paper.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/sources.py",
+     "engine/paperinspector/pipeline.py",
+     "web/src/App.tsx"
+    ]
+   },
+   {
+    "category": "author-self-check",
+    "title": "Raw-image provenance check",
+    "description": "Authors drop their raw image folder; each figure panel is matched back to a raw file (and reports panels with no source or one raw image used twice). Strong value for self-checks and for responses to concerns.",
+    "value": 5,
+    "effort": 4,
+    "files": [
+     "engine/paperinspector/imgdup.py",
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/server.py",
+     "web/src/App.tsx"
+    ]
+   },
+   {
+    "category": "author-self-check",
+    "title": "Re-check after fixes with resolved list",
+    "description": "Link a new upload to a previous self-check and show resolved / still present / new items, using finding fingerprints.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "author-self-check",
+    "title": "Fix-it exports for data problems",
+    "description": "For gene-symbol-to-date and hidden-sheet findings, offer a corrected copy of the spreadsheet (text-formatted gene column, unhidden sheets) for the author to review.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/datacheck.py",
+     "engine/paperinspector/server.py"
+    ]
+   },
+   {
+    "category": "ai",
+    "title": "Ask the AI about one finding",
+    "description": "Today the investigator only runs on the whole paper (agent.investigate). Add 'Ask AI about this finding' with an optional question, using the same tools but scoped, and a chat-style thread in the Inspector.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/agent.py",
+     "engine/paperinspector/server.py",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "ai",
+    "title": "Promote AI-only observations to findings",
+    "description": "AI 'Seen by the AI only' observations (RunView.tsx) are static text; let the reviewer promote one into a manual finding with location, or dismiss it.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "web/src/RunView.tsx",
+     "engine/paperinspector/server.py"
+    ]
+   },
+   {
+    "category": "ai",
+    "title": "Keep history of AI reviews",
+    "description": "Re-asking overwrites ai_review; store each run with model, date and usage, allow comparing two models' rulings.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/agent.py",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "ai",
+    "title": "Privacy preview before sending to a model",
+    "description": "Before the AI investigator runs, list exactly which figures/text will be sent to which provider, with an option to exclude items.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/agent.py",
+     "web/src/RunView.tsx",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "fetching",
+    "title": "Show what could not be fetched and how to fill gaps",
+    "description": "When the fetch misses the PDF or supplements (paywall), show a clear 'Missing: main PDF, Supplementary Data 2' card with publisher links and a drop target that attaches files to the same run and re-analyses.",
+    "value": 5,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/fetch.py",
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/server.py",
+     "web/src/PaperTab.tsx",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "fetching",
+    "title": "Add supplements to an existing run",
+    "description": "Upload extra files into a finished run and re-run only data/image checks for the new material, rather than starting over.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/server.py",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "fetching",
+    "title": "Institutional proxy / browser-assisted download",
+    "description": "Let the user open the publisher page in their browser and hand Paper Inspector the downloaded PDF automatically (watch Downloads for the matching DOI) without bypassing paywalls.",
+    "value": 3,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/fetch.py",
+     "mac/Sources/PaperInspector/Engine.swift"
+    ]
+   },
+   {
+    "category": "ui-polish",
+    "title": "Run header redesign with clear next actions",
+    "description": "The run header packs title, meta and counts into one long sentence (RunView.tsx run-title). Split into title, byline, chips (journal, year, retracted, files examined), and a primary action area (Ask AI, Export menu, Share).",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "web/src/RunView.tsx",
+     "web/src/styles.css",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "ui-polish",
+    "title": "Score explanation popover",
+    "description": "Clicking the score shows which findings contributed how many points (risk_score weights x confidence with repeat damping), so users understand why it is 62.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/models.py",
+     "engine/paperinspector/server.py",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "ui-polish",
+    "title": "Category overview dashboard for a run",
+    "description": "A summary strip of the seven areas (Images, Data, Statistics, Text, References, Reporting, Record) with counts and 'checked / not applicable / not available' state, so a clean area is distinguishable from an unchecked one.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "web/src/RunView.tsx",
+     "mac/Sources/PaperInspector/RunView.swift"
+    ]
+   },
+   {
+    "category": "ui-polish",
+    "title": "Figure thumbnails with finding heat",
+    "description": "In the Figures tab, overlay small severity dots on thumbnails at the panels involved, and sort figures by number of findings.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "web/src/RunView.tsx",
+     "web/src/styles.css"
+    ]
+   },
+   {
+    "category": "ui-polish",
+    "title": "Toasts and saved-state feedback",
+    "description": "Unified toast system for copy, save, delete/undo, export complete (currently ad-hoc 'Copied'/'Saved' labels).",
+    "value": 2,
+    "effort": 1,
+    "files": [
+     "web/src/App.tsx",
+     "web/src/RunView.tsx",
+     "web/src/styles.css"
+    ]
+   },
+   {
+    "category": "privacy-security",
+    "title": "Lock down local API against cross-site requests",
+    "description": "The engine accepts form POSTs from any origin on 127.0.0.1:8765 (e.g. /api/demo, /api/doi with simple content types); add an Origin/Host check or per-session token so a malicious web page cannot trigger scans or change settings.",
+    "value": 4,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/server.py",
+     "web/src/api.ts",
+     "mac/Sources/PaperInspector/Engine.swift"
+    ]
+   },
+   {
+    "category": "privacy-security",
+    "title": "Confidential review mode",
+    "description": "For papers under peer review: no online lookups, no AI, runs encrypted at rest or auto-deleted after N days, and a banner showing confidential status.",
+    "value": 4,
+    "effort": 3,
+    "files": [
+     "engine/paperinspector/pipeline.py",
+     "engine/paperinspector/settings.py",
+     "web/src/RunView.tsx"
+    ]
+   },
+   {
+    "category": "quality",
+    "title": "In-app feedback on detector accuracy",
+    "description": "Aggregate human verdicts into a local 'precision by check' dashboard (and optional anonymous export) to tune thresholds and feed tools/real_eval.py.",
+    "value": 3,
+    "effort": 2,
+    "files": [
+     "engine/paperinspector/server.py",
+     "tools/real_eval.py",
+     "web/src/App.tsx"
+    ]
+   },
+   {
+    "category": "i18n",
+    "title": "Localization",
+    "description": "Externalise UI strings (App.tsx, RunView.tsx, CHECK_NAMES) and engine finding titles for translation (Chinese, Spanish, German first).",
+    "value": 2,
+    "effort": 4,
+    "files": [
+     "web/src/api.ts",
+     "web/src/App.tsx",
+     "web/src/RunView.tsx",
+     "engine/paperinspector/report.py"
+    ]
+   }
+  ]
+ }
+}
