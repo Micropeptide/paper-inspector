@@ -60,5 +60,5 @@ up, read `docs/HANDOVER.md`.
 7. **Smaller ideas left out for precision**: Mann-Whitney/Wilcoxon recompute, SPRITE, p-curve, colour negatives,
    OCR of blot labels, authorship from file metadata (deliberately not built: false alarms and personal data),
    Cellosaurus "not found", registries other than ClinicalTrials.gov, retraction reasons.
-8. **Publish**: README, screenshots and the submission write-up are ready. The public repository has not been
-   created yet; see "Publishing" in `docs/HANDOVER.md`.
+8. **Submission**: the repository is public; the demo video and team information are still to do (see
+   `docs/HANDOVER.md`).

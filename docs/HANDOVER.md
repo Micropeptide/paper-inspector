@@ -132,14 +132,14 @@ and the tests already do this; one-off scripts must too.
 
 ## Publishing
 
-The repository has **not been published yet**. Nothing has been pushed to GitHub. When ready:
+The public repository is https://github.com/Micropeptide/paper-inspector (branch `main`, tag `v0.1.0`). To publish
+a change:
 
 1. Re-run the checks above and fill in any numbers in `README.md` and `docs/SUBMISSION.md` that changed.
 2. Check that no file holds personal names, home paths, host names, institution names or e-mail addresses:
    `git grep -nIiE "/Users/|/home/|[a-z0-9._-]+@[a-z0-9-]+\.[a-z]{2,}"` should show only generic placeholders
    and package metadata.
-3. Create the public repository and push, for example `gh repo create paper-inspector --public --source . --push`,
-   then push the tag with `git push --tags`.
+3. Commit and `git push`. Tag releases (`git tag v0.x.y && git push --tags`).
 4. Add the screenshots from `docs/screenshots/` and the demo video to the project page.
 
 History rules: commits keep their real timestamps (never back-date or forward-date them), and the docs make no
@@ -155,7 +155,7 @@ shot list for the video. The rules disqualify false or misleading submission inf
 write-up must come from a benchmark run in this repository, and anything not built must not be described as
 built.
 
-Still to do for the submission: record the video, fill in team information, and publish the repository.
+Still to do for the submission: record the video and fill in team information.
 
 ## Known issues and next steps
 
